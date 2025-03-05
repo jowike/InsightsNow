@@ -1,0 +1,73 @@
+# Here you can define all your data sets by using simple YAML syntax.
+#
+# Documentation for this file format can be found in "The Data Catalog"
+# Link: https://docs.kedro.org/en/stable/data/data_catalog.html
+#
+# We support interacting with a variety of data stores including local file systems, cloud, network and HDFS
+#
+
+revision_history:
+  type: pandas.CSVDataset
+  filepath: data/0_source/00_extract_vintagedata.csv
+  load_args:
+    decimal: ","
+
+vintage_data:
+  type: pandas.ParquetDataset
+  filepath: data/01_raw/vintage_data.parquet
+
+spec:
+  type: pandas.CSVDataset
+  filepath: data/02_intermediate/variable.csv
+
+harmonized_data:
+  type: pandas.ExcelDataset
+  filepath: data/02_intermediate/harmonized_time_series.xlsx
+  load_args:
+    engine: openpyxl
+    sheet_name: data
+    header: 
+    index_col: 
+  save_args:
+    sheet_name: data
+    index: True
+
+transformed_aligned_data:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/transformed_data.parquet
+    
+aligned_non_transformed_data:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/non_transformed_data.parquet
+
+reduced_transformed_data:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/reduced_transformed_data.parquet
+
+transformed_data_stat:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/transformed_data_stat.parquet
+
+transformed_data_var:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/transformed_data_var.parquet
+
+selected_series:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/selected_series.parquet
+
+ar_estimation_results:
+  type: kedro_datasets.text.TextDataset
+  filepath: data/07_model_output/ar_node_completion_logs.txt
+
+var_estimation_results:
+  type: kedro_datasets.text.TextDataset
+  filepath: data/07_model_output/var_node_completion_logs.txt
+
+ml_estimation_results:
+  type: kedro_datasets.text.TextDataset
+  filepath: data/07_model_output/ml_node_completion_logs.txt
+
+dash_data_model:
+  type: kedro_datasets.text.TextDataset
+  filepath: data/08_reporting/pipeline_completion_logs.txt
