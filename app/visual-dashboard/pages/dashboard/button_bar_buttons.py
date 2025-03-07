@@ -46,7 +46,7 @@ def tableAction():
         }
 
     container = html.Div([
-        html.A([html.Span(className='fas fa-project-diagram me-2'), "View Details" ], id="start-viz-button", n_clicks=0, className='dropdown-item rounded-top'),
+        html.A([html.Span(className='fas fa-project-diagram me-2'), "Run" ], id="start-viz-button", n_clicks=0, className='dropdown-item rounded-top'),
         html.A([html.Span(className='fas fa-stop me-2'), "Stop" ], id="stop-viz-button", n_clicks=0, className='dropdown-item rounded-bottom')
     ], className='dropdown-menu py-0', style=style)
 

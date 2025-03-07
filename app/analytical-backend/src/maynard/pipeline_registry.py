@@ -2,7 +2,7 @@
 
 # from kedro.framework.project import find_pipelines
 from kedro.pipeline import Pipeline
-from refinery.pipelines.default import create_pipeline
+from maynard.pipelines.default import create_pipeline
 
 
 def register_pipelines() -> dict[str, Pipeline]:

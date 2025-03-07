@@ -101,6 +101,7 @@ def register_callbacks(app, project_root):
                 try:
                     # viz_port = __find_free_port()
                     viz_port = 5000
+                    host_port = 1999
 
                     # Start Kedro Viz in a new process group
                     kedro_viz_process = subprocess.Popen(
@@ -114,8 +115,8 @@ def register_callbacks(app, project_root):
                                 [
                                     "✨ Kedro Viz is running at ",
                                     html.A(
-                                        f"http://127.0.0.1:{viz_port}/",
-                                        href=f"http://127.0.0.1:{viz_port}/",
+                                        f"http://127.0.0.1:{host_port}/",
+                                        href=f"http://127.0.0.1:{host_port}/",
                                         target="_blank",
                                         style={
                                             "color": "#7FBBFF",

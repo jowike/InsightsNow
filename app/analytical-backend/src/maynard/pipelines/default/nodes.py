@@ -1,8 +1,6 @@
 import sys
 
-sys.path.append(
-"/app/analytical-backend/dependencies"
-)
+sys.path.append("src/maynard/dependencies")
 
 import pandas as pd
 import numpy as np
@@ -14,13 +12,13 @@ import os
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
-from utils_ import (
+from tools import (
     _convert_to_datetime,
     cast_spec_to_dict,
     suggest_transformation,
 )
-from utils_ import test_variance as tvar
-from utils_ import test_stationarity as tstat
+from tools import test_variance as tvar
+from tools import test_stationarity as tstat
 from data_revisions import prepare_real_time_vintage_data
 from ragged_edges import shift_to_fill_trailing_nans
 from load_spec import load_spec
