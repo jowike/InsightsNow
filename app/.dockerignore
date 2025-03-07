@@ -1,5 +1,5 @@
 # Byte-compiled / optimized / DLL files
-**/__pycache__/** 
+**/__pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -11,5 +11,4 @@
 **/.DS_Store
 
 # Data directory in the analytical backend
-app/analytical-backend/data/
-**/*.tar*
+**/analytical-backend/data/
