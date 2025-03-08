@@ -1,8 +1,6 @@
 import sys
 
-sys.path.append(
-"/app/analytical-backend/dependencies"
-)
+sys.path.append("../analytical-backend/dependencies")
 
 import pandas as pd
 import numpy as np

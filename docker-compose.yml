@@ -2,17 +2,17 @@ version: '3.8'
 
 services:
   visual-dashboard:
-    build:
-      context: ./app
+    image: python:3.12   # Używamy oficjalnego obrazu Pythona
     container_name: maynard
     ports:
       - "1910:1024"
       - "1999:5000"
     volumes:
-      - maynard_data:/mnt
-    entrypoint: >
-      sh -c "mkdir -p /app/analytical-backend/data && cp -r /mnt/. /app/analytical-backend/data/ && python setup.py install && python app.py"
-      
+      - maynard_data:/mnt  # Wolumen z danymi
+      - .:/app             # Montowanie katalogu aplikacji
+    working_dir: /app
+    entrypoint: ["/app/entrypoint.sh"]  # Uruchamiamy skrypt startowy
+
 volumes:
   maynard_data:
     external: true

@@ -199,7 +199,7 @@ def load_evaluation(
 # Global variables to store ...
 # pipeline_status = "Not started"
 # last_run_timestamp = "N/A"
-TARGET_FOLDER = "../analytical-backend/data/_test"
+TARGET_FOLDER = "../analytical-backend/data/0_source/"
 PARAMETERS_PATH = "../analytical-backend/conf/base/parameters.yml"
 CATALOG_PATH= "../analytical-backend/conf/base/catalog.yml"
 parameters, data_catalog = __load_yaml(PARAMETERS_PATH), __load_yaml(CATALOG_PATH)

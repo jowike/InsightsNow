@@ -12,3 +12,4 @@
 
 # Data directory in the analytical backend
 **/analytical-backend/data/
+**/*.tar*
