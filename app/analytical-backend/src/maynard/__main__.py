@@ -1,5 +1,5 @@
-"""refinery file for ensuring the package is executable
-as `refinery` and `python -m refinery`
+"""maynard file for ensuring the package is executable
+as `maynard` and `python -m maynard`
 """
 import sys
 from pathlib import Path

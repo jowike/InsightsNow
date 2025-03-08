@@ -7,3 +7,12 @@ kedro-datasets[matplotlib-matplotlibwriter,pandas-csvdataset,pandas-exceldataset
 kedro-viz>=6.7.0
 scikit-learn~=1.5.1
 seaborn~=0.12.1
+bottleneck
+numpy==1.26.4
+xlsxwriter
+openpyxl
+pyarrow
+fastparquet
+mifs@ git+https://github.com/jowike/mifs.git@maynard
+pmdarima
+linear-tree

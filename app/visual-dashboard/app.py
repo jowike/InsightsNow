@@ -5,7 +5,8 @@ from server import serve_app
 from callbacks.dashboard_callbacks import register_callbacks  # Import the callback registry function
 import os
 import sys
-sys.path.append("../analytical-backend/dependencies/")
+sys.path.append("../analytical-backend/src/maynard/dependencies")
+
 
 external_stylesheets = [
     "https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css",

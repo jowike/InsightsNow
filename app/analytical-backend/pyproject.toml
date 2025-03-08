@@ -4,17 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 requires-python = ">=3.9"
-name = "refinery"
+name = "maynard"
 readme = "README.md"
 dynamic = [ "version",]
 dependencies = [ "ipython>=8.10", "jupyterlab>=3.0", "notebook", "kedro~=0.19.9", "kedro[jupyter]", "kedro-datasets[pandas-csvdataset, pandas-exceldataset, pandas-parquetdataset, plotly-plotlydataset, plotly-jsondataset, matplotlib-matplotlibwriter]>=3.0", "kedro-viz>=6.7.0", "scikit-learn~=1.5.1", "seaborn~=0.12.1",]
 
 [project.scripts]
-refinery = "refinery.__main__:main"
+maynard = "maynard.__main__:main"
 
 [tool.kedro]
-package_name = "refinery"
-project_name = "refinery"
+package_name = "maynard"
+project_name = "maynard"
 kedro_init_version = "0.19.9"
 tools = "['Kedro Viz']"
 example_pipeline = "True"
@@ -23,7 +23,7 @@ source_dir = "src"
 [project.entry-points."kedro.hooks"]
 
 [tool.setuptools.dynamic.version]
-attr = "refinery.__version__"
+attr = "maynard.__version__"
 
 [tool.setuptools.packages.find]
 where = [ "src",]
