@@ -1,18 +1,16 @@
-version: '3.8'
-
 services:
   visual-dashboard:
     image: python:3.12   # Używamy oficjalnego obrazu Pythona
-    container_name: maynard
     ports:
-      - "1910:1024"
-      - "1999:5000"
+      - "8005:1024"
+      - "8006:5000"
     volumes:
-      - maynard_data:/mnt  # Wolumen z danymi
-      - .:/app             # Montowanie katalogu aplikacji
+      - maynard-app:/app  # Montowanie katalogu aplikacji i danych
     working_dir: /app
     entrypoint: ["/app/entrypoint.sh"]  # Uruchamiamy skrypt startowy
-
 volumes:
-  maynard_data:
-    external: true
+  maynard-app:
+    driver_opts:
+      type: "nfs"
+      o: "addr=194.29.178.17,nolock,soft,rw"
+      device: ":/vms/volumes/InsightsNow/app"
