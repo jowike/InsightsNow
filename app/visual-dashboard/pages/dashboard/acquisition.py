@@ -6,8 +6,8 @@ def acquisition():
     return html.Div([
         html.Div([
             html.Div([
-                html.H2("Model Assessment", className='fs-5 fw-bold mb-1'),
-                html.P("Gives you an overview of the key evaluation metrics for predictive analytics to effectively assess the quality of nowcasts."),
+                html.H2("Model Assessment", className='fs-5 fw-normal mb-1'),
+                html.P("Key factors driving the quality of predictive models, along with their accuracy measures."),
                 html.Div([
 
                     # html.H2("Underlying Estimates", className='fs-6 fw-bold mt-3'),

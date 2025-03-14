@@ -132,7 +132,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                     "var_estimation_results"
                 ],
                 outputs="dash_data_model",
-                name="collect_results",
+                name="collect_results_node",
             ),
         ]
     )

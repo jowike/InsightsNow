@@ -1,6 +1,7 @@
 import sys
 
 sys.path.append("src/maynard/dependencies")
+sys.path.append("/Users/ejowik001/Desktop/Github/InsightsNow/app/analytical-backend/src/maynard/dependencies")
 
 import pandas as pd
 import numpy as np
@@ -12,10 +13,20 @@ import os
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
+import rpy2.robjects as ro
+from rpy2.robjects.packages import importr
+from rpy2.robjects import pandas2ri
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects import default_converter
+from rpy2.robjects import pandas2ri
+
 from tools import (
     _convert_to_datetime,
     cast_spec_to_dict,
     suggest_transformation,
+    mape,
+    rmse,
+    mse
 )
 from tools import test_variance as tvar
 from tools import test_stationarity as tstat
@@ -36,7 +47,6 @@ from estimation import (
 )
 from retransform_prediction import retransform_
 from plots import plot_prediction
-
 
 def prepare_vintage_data(
     ds: pd.DataFrame,
@@ -72,6 +82,7 @@ def prepare_vintage_data(
         parameters["series_val_col"],
     ]
 
+    # TODO: preliminary, current-vintage (pseudo-real-time)
     if parameters["vintage_name"] == "real-time":
         df_long = prepare_real_time_vintage_data(
             ds=df[cols].drop_duplicates(),
@@ -82,9 +93,12 @@ def prepare_vintage_data(
             pub_date_col=parameters["pub_date_col"],
             series_val_col=parameters["series_val_col"],
         )
-    # TODO: preliminary, current-vintage (pseudo-real-time)
-    spec = suggest_spec(ds, parameters, spec_options)
-    return df_long, spec
+        spec = suggest_spec(
+            ds.loc[ds["VariableCode"].isin(df_long["VariableCode"].unique())],
+            parameters, spec_options
+            )
+        
+        return df_long, spec
 
 
 def suggest_spec(
@@ -185,16 +199,37 @@ def harmonize_ragged_edges(
     parameters,
 ):
     to_write = pd.DataFrame()
+    ds[parameters["ref_date_col"]] = pd.to_datetime(ds[parameters["ref_date_col"]])
+    reference_date = pd.to_datetime(parameters["ref_date"])
+    lag_date = reference_date - relativedelta(month=1)
+
     for freq_desc in spec["frequency"].unique():
-        series_codes = spec.loc[spec["frequency"] == freq_desc]["seriesid"]
+        series_codes = list(
+            spec.loc[
+                (spec["frequency"] == freq_desc) 
+                ]["seriesid"]
+        )
         subset = ds.loc[ds[parameters["series_code_col"]].isin(series_codes)]
         if subset.shape[0]:
-            df_f_pivot = subset.pivot(
+            df_wide = subset.pivot(
                 index=parameters["ref_date_col"],
                 columns=parameters["series_code_col"],
                 values=parameters["series_val_col"],
             )
-            res_i = shift_to_fill_trailing_nans(df_f_pivot)
+
+            if parameters["y_code"] in series_codes:
+                X_df = df_wide.drop(columns=[parameters["y_code"]])
+                y_df = df_wide[[parameters["y_code"]]]
+
+                res_i = pd.merge(
+                    shift_to_fill_trailing_nans(X_df.loc[:reference_date]),
+                    y_df,  # y_df.loc[:lag_date],
+                    how="left",
+                    left_index=True,
+                    right_index=True
+                )
+            else:
+                res_i = shift_to_fill_trailing_nans(df_wide.loc[:reference_date])
 
             to_write = pd.concat(
                 [to_write, pd.melt(res_i, value_vars=res_i.columns, ignore_index=False)]
@@ -206,7 +241,6 @@ def harmonize_ragged_edges(
         values="value",
     )
     return to_write
-
 
 def transform_time_series(
     ds: pd.DataFrame,
@@ -390,13 +424,14 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     values = model_result["values"]
 
     # Print the best model's details
-    # print("============ Model Details ============")
-    # print(f"Model                     : {model_result['best_model']}")
-    # print(f"Reference Date            : {reference_date}")
-    # print(f"Forecast                  : {pred:.4f}")
-    # print(f"R-Squared (R²)            : {model_result['r_squared']:.4f}")
-    # print(f"Mean Absolute Percentage Error (MAPE): {model_result['mape']:.2f}%")
-    # print(f"Root Mean Square Error (RMSE) : {model_result['rmse']:.4f}")
+    print("============ Model Details ============")
+    print(f"Model                     : {model_result['best_model']}")
+    print(f"Reference Date            : {reference_date}")
+    print(f"Forecast                  : {pred:.4f}")
+    print(f"R-Squared (R²)            : {model_result['r_squared']:.4f}")
+    print(f"Mean Absolute Percentage Error (MAPE): {model_result['mape']:.2f}%")
+    print(f"Root Mean Square Error (RMSE) : {model_result['rmse']:.4f}")
+    print("\n")
 
     # print(calculate_contributions(coef_, pred, lag, values))
 
@@ -409,6 +444,16 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     pred = model_result["pred_"]["backcast"]
     actual = model_result["actual"].loc[dt]
     bounds = calculate_conf_bounds(pred, actual)
+
+    bounds_level = {}
+    for key, value in bounds.items():
+        data, dt_, _ = cast_to_base_unit(
+            ds_base, spec, parameters["y_code"], value, dtype="pred"
+        )
+        tmp = pd.Series(data.reshape(1, -1)[0], index=dt_)
+        bounds_level[key] = tmp.loc[dt]
+
+    # retransformed_actual = R_df.loc[dt][parameters["y_code"]]  # retransformed actual
 
     # plot_prediction(
     #     dt=dt,
@@ -447,29 +492,146 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     Rhat_df = pd.DataFrame(Rhat, columns=header, index=Time)
     R_df = pd.DataFrame(R, columns=header, index=Time)
 
+
     retr_forecast = Rhat_df.loc[reference_date].item()
     retr_actual = R_df.loc[reference_date].item()
-    retr_lag = R_df.loc[lag_date].item()
 
-    contributions = calculate_contributions(coef_, retr_forecast, retr_lag, values)
+    # Backcast (test) values should be returned without any adjustments
+    retr_backcast = Rhat_df.loc[:lag_date]
+    retr_actuals = R_df.loc[:lag_date]
+
+    # retr_lag = R_df.loc[lag_date].item()
+
+    # contributions = calculate_contributions(coef_, retr_forecast, retr_lag, values)
+
+    # Shap-based impact assessment
+    # [SHAP] Rozwiązanie 2. (plan A): Powiedzmy, że to "expected value" to byłaby nasza uśredniona prognoza, a jeśli to prognoza to możemy ją sobie normalnie retransformować używając indexu zbioru treningowego. Więc jeśli modelujemy np. zmianę procentową, to możemy zrobić procentową retransformację zarówno prognozy jak i expected value. Wtedy jak wrzucimy obydwie wartości w tę samą retransformację opartą o tę samą (ostatnią) obserwację ze zbioru treningowego, to nie ma bata, ale zależność miedzy expected i predicted values przed i po retransformacji muszą być takie same.
+    # Retransform expected value
+    Ehat, Time, cutoff_date = cast_to_base_unit(
+        ds_base, spec, parameters["y_code"], model_result["expected_value"], dtype="pred"
+    )
+
+    header = [parameters["y_code"]]
+    Ehat_df = pd.DataFrame(Ehat, columns=header, index=Time)
+
+    expected_retransformed = Ehat_df.loc[reference_date].item()
+
+    shap_values = model_result["shap_values"]
+
+    shap_diff = retr_forecast - expected_retransformed
+    shap_contributions = pd.DataFrame({"variable_id": list(coef_.index),
+                            "coef_": coef_,
+                            "value": values,
+                            "shap_value": shap_values,
+                            "impact": shap_values*(shap_diff/shap_values.sum())  # Shap retransformed
+                            })
 
     # print("\n============ Forecast vs Actual ============")
-    # print(f"Reference Date            : {reference_date}")
     # print(f"Retransformed Forecast    : {retr_forecast:,.2f}")
-    # print(f"Actual Release            : {retr_actual:,.2f}")
-    # print(
-    #     f"Percentage Error (Level)  : {(retr_forecast - retr_actual) / retr_actual:.2%}"
-    # )
 
-    bounds_level = {}
-    for key, value in bounds.items():
-        data, dt_, _ = cast_to_base_unit(
-            ds_base, spec, parameters["y_code"], value, dtype="pred"
+
+    # Post-inference nowcast adjustment
+    start_date, end_date = model_result["pred_"]["backcast"].index.min().date(), reference_date
+    pred_act =  pd.concat([
+        Rhat_df.loc[start_date:reference_date].rename(columns={parameters["y_code"]: "Predicted"}),
+        R_df.loc[start_date:reference_date].rename(columns={parameters["y_code"]: "VariableValue"}),
+        Rhat_df.shift().loc[start_date:reference_date].rename(columns={parameters["y_code"]: "Lag"})
+    ], axis=1)
+    eval_df1 = pred_act.loc[:lag_date]
+
+    print("\n======== Retransformed Nowcast ========")
+    print(f"Reference Date            : {reference_date}")
+    print(f"Retransformed Forecast    : {retr_forecast:,.2f}")
+    print(f"R-Squared (R²)            : {r2_score(y_true=eval_df1["VariableValue"], y_pred=eval_df1["Predicted"]):.4f}")
+    print(f"Mean Absolute Percentage Error (MAPE): {mape(actual=eval_df1["VariableValue"], predicted=eval_df1["Predicted"]):.2f}%")
+    print(f"Root Mean Square Error (RMSE) : {mse(actual=eval_df1["VariableValue"], predicted=eval_df1["Predicted"]):.4f}")
+
+    pred_act["Lag(Actual Change (MoM))"] = (pred_act["VariableValue"] - pred_act["Lag"]).shift()
+    pred_act["Predicted - Lag"] = pred_act["Predicted"] - pred_act["Lag"]
+    df = pred_act.reset_index().rename(columns={"index": "ReferenceDate"}).dropna(subset=["Lag"])
+
+    with localconverter(default_converter + pandas2ri.converter):
+
+        # Import the R package
+        strucchange = importr('strucchange')
+        # Identify breakpoints
+        ro.globalenv['y'] = ro.FloatVector(df["Lag"])
+        ro.globalenv['reference_date'] = ro.StrVector(df["ReferenceDate"].astype(str))
+        ro.r('''
+            data <- data.frame(y = y, reference_date = reference_date)
+            bp_model <- breakpoints(y ~ 1, data = data)
+            bp_dates <- data$reference_date[bp_model$breakpoints]
+        ''')
+
+        # Extract breakpoints
+        breakpoints = ro.r('bp_model$breakpoints')
+        print("\n")
+        print("Detected Breakpoints at:", list(breakpoints))
+
+        bp_dates = ro.r('as.character(bp_dates)')
+        bp_dates = list(bp_dates)
+
+        print("Structural breaks detected at:", bp_dates)
+
+    pred_act.index = pd.to_datetime(pred_act.index)
+    bp_dates = pd.to_datetime(bp_dates)
+
+    baseline = (pred_act["Lag(Actual Change (MoM))"] / pred_act["Lag"]).abs().rolling(6).quantile(0.9)  # adaptively high
+    ratio = ((pred_act["Predicted - Lag"]/pred_act["Lag"]).abs() > np.maximum(baseline, 0.015))
+
+    dynamic_windows = []
+    start, end = np.nan, np.nan
+
+    for i in range(len(bp_dates)):
+
+        start = bp_dates[i]
+        try:
+            end = bp_dates[i+1]
+        except IndexError:
+            end = ratio.index.max()
+
+        window = (ratio > baseline).loc[start:end]
+
+        if window.any():
+            end_date = window.loc[window].index.max()
+            dynamic_windows.append((start, end_date))
+
+    # Nowcasts adjustment
+    pred_act = pred_act.reset_index().rename(columns={"index": "ReferenceDate"})
+    pred_act["in_dynamic_window"] = False
+
+    # Check for each window
+    for start, end in dynamic_windows:
+        pred_act["in_dynamic_window"] |= pred_act["ReferenceDate"].between(start, end)
+
+    # Flag preview
+    # display(pred_act)
+    adjusted_nowcast = pred_act["Lag"]
+
+    pred_act["Nowcast"] = np.where(
+        pred_act["in_dynamic_window"],
+        adjusted_nowcast,
+        pred_act["Predicted"]
         )
-        tmp = pd.Series(data.reshape(1, -1)[0], index=dt_)
-        bounds_level[key] = tmp.loc[dt]
-    bounds_level["Predicted"] = Rhat_df.loc[dt][parameters["y_code"]]  # retransformed backcast
-    retransformed_actual = R_df.loc[dt][parameters["y_code"]]  # retransformed actual
+    eval_df2 = pred_act.loc[pred_act["ReferenceDate"] <= pd.to_datetime(lag_date)]
+
+    # Adjustments should be applied only to forecast values, only if indicated by the Bai-Perron test
+    adjusted_forecast = pred_act.loc[pred_act["ReferenceDate"] == pd.to_datetime(reference_date)]["Nowcast"].item()
+
+    # Log.INFO
+    formatted_windows = [
+        (start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+        for start, end in dynamic_windows
+    ]
+
+    print("Nowcasts adjusted for periods flagged by the Bai-Perron structural break test:", formatted_windows)
+    print("\n")
+
+    print("=============== Summary ===============")
+    print(f"Adjusted Forecast    : {adjusted_forecast:,.2f}")
+    print(f"R-Squared (R²)            : {r2_score(y_true=eval_df2["VariableValue"], y_pred=eval_df2["Nowcast"]):.4f}")
+    print(f"Mean Absolute Percentage Error (MAPE): {mape(actual=eval_df2["VariableValue"], predicted=eval_df2["Nowcast"]):.2f}%")
+    print(f"Root Mean Square Error (RMSE) : {mse(actual=eval_df2["VariableValue"], predicted=eval_df2["Nowcast"]):.4f}")
 
     # plot_prediction(
     #     dt=dt,
@@ -484,6 +646,19 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     #     plt_out_path=os.path.join(parameters["fig_out_dir"], f'{model_result["best_model"]}_{datetime.now().strftime("%Y%m%d%H%M%S")}_bpva.png')
     # )
 
+    # plot_prediction(
+    #     dt=dt,
+    #     y_pred=pred_act.set_index("ReferenceDate").loc[dt]["Nowcast"],
+    #     y_actual=R_df.loc[dt][parameters["y_code"]],
+    #     lower1=bounds_level["L1"],
+    #     upper1=bounds_level["U1"],
+    #     lower2=bounds_level["L2"],
+    #     upper2=bounds_level["U2"],
+    #     mode="lines+markers",
+    #     title=f'Series: {parameters["y_code"]}, Reference Date: {reference_date}, Unit: {unit}',
+    #     # plt_out_path=os.path.join(parameters["fig_out_dir"], f'{model_result["best_model"]}_{datetime.now().strftime("%Y%m%d%H%M%S")}_bpva.png')
+    # )
+
     # Save everything to an Excel file with multiple sheets
     excel_file = os.path.join(parameters["model_output_directory"], parameters["ml_report_filename"])
 
@@ -495,9 +670,9 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
                     "Model Name": model_result["best_model"],
                     "Series Code": parameters["y_code"],
                     "Reference Date": reference_date,
-                    "R-Squared": model_result['r_squared'],
-                    "MAPE": (retr_forecast - retr_actual) / retr_actual,
-                    "RMSE": f"{model_result['rmse']:.4f}",
+                    "R-Squared": r2_score(y_true=retr_actuals, y_pred=retr_backcast),  # model_result['r_squared'],
+                    "MAPE": mape(actual=retr_actuals, predicted=retr_backcast),  # f"{model_result['mape']:.2%}",
+                    "RMSE": rmse(actual=retr_actuals, predicted=retr_backcast),  # f"{model_result['rmse']:.4f}",
                     "Model Estimations Count": model_result["n_est"]
                 },
                 orient="index",
@@ -507,17 +682,27 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
             .rename(columns={"index": "Banner"})
         )
         sheet1.to_excel(writer, sheet_name="Model Details", index=False)
+        
         # Save contributions
-        contributions.to_excel(writer, sheet_name="Contributions")
-
-        # Save confidence bounds
-        pd.DataFrame(bounds_level).to_excel(writer, sheet_name="Confidence Bounds")
+        shap_contributions.to_excel(writer, sheet_name="Contributions")
 
         # Save forecast and actual values
         R_df = R_df.rename(columns={parameters["y_code"]: "Actual"})
-        Rhat_df = Rhat_df.rename(columns={parameters["y_code"]: "Predicted"})
+        Rhat_adjusted = pd.concat([
+            Rhat_df.loc[:lag_date].rename(columns={parameters["y_code"]: "Predicted"}),
+            pd.DataFrame(adjusted_forecast, index=[reference_date], columns=["Predicted"])
+            ])
+        # Rhat_df = Rhat_df.rename(columns={parameters["y_code"]: "Predicted"})
+
+        # Save confidence bounds
+        # Backcast (test) values should be returned without any adjustments
+        # bounds_level["Predicted"] = Rhat_adjusted.loc[dt]["Predicted"]
+        bounds_level["Predicted"] = Rhat_df.loc[dt][parameters["y_code"]]  # retransformed backcast
+        pd.DataFrame(bounds_level).to_excel(writer, sheet_name="Confidence Bounds")
+
         sheet3 = (
-            pd.merge(Rhat_df, R_df, how="outer", left_index=True, right_index=True)
+            # Adjustments should be applied only to forecast values, only if indicated by the Bai-Perron test
+            pd.merge(Rhat_adjusted, R_df, how="outer", left_index=True, right_index=True)
             .reset_index()
             .rename(columns={"index": "Reference Date"})
         )
@@ -592,11 +777,14 @@ def estimate_arima_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     Rhat_df = pd.DataFrame(Rhat, columns=header, index=Time)
     R_df = pd.DataFrame(R, columns=header, index=Time)
 
-    retr_forecast = Rhat_df.loc[reference_date].item()
-    retr_actual = R_df.loc[reference_date].item()
-
     reference_date = pd.to_datetime(parameters["ref_date"]).date()
+    lag_date = reference_date - relativedelta(months=1)
 
+    # retr_forecast = Rhat_df.loc[reference_date].item()
+    # retr_actual = R_df.loc[reference_date].item()
+
+    retr_backcast = Rhat_df.loc[:lag_date]
+    retr_actuals = R_df.loc[:lag_date]
     # print("\n============ Forecast vs Actual ============")
     # print(f"Reference Date            : {reference_date}")
     # print(f"Retransformed Forecast    : {retr_forecast:,.2f}")
@@ -613,8 +801,9 @@ def estimate_arima_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
         )
         tmp = pd.Series(data.reshape(1, -1)[0], index=dt_)
         bounds_level[key] = tmp.loc[dt]
+        
     bounds_level["Predicted"] = Rhat_df.loc[dt][parameters["y_code"]]  # retransformed backcast
-    retransformed_actual = R_df.loc[dt][parameters["y_code"]]  # retransformed actual
+    # retransformed_actual = R_df.loc[dt][parameters["y_code"]]  # retransformed actual
 
     # plot_prediction(
     #     dt=dt,
@@ -636,9 +825,9 @@ def estimate_arima_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
                     "Model Name": model_result["model"],
                     "Series Code": parameters["y_code"],
                     "Reference Date": reference_date,
-                    "R-Squared": model_result['r_squared'],
-                    "MAPE": ((bounds_level["Predicted"] - retransformed_actual) / retransformed_actual).mean(),
-                    "RMSE": f"{model_result['rmse']:.4f}",
+                    "R-Squared": r2_score(y_true=retr_actuals, y_pred=retr_backcast),
+                    "MAPE": mape(actual=retr_actuals, predicted=retr_backcast),
+                    "RMSE": rmse(actual=retr_actuals, predicted=retr_backcast),
                 },
                 orient="index",
                 columns=["Value"],
@@ -677,6 +866,7 @@ def estimate_var_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     )
 
     reference_date = pd.to_datetime(parameters["ref_date"]).date()
+    lag_date = reference_date - relativedelta(months=1)
 
     # print("============ Model Details ============")
     # print(f"Model                     : {model_result['model']}")
@@ -730,8 +920,11 @@ def estimate_var_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     Rhat_df = pd.DataFrame(Rhat, columns=header, index=Time)
     R_df = pd.DataFrame(R, columns=header, index=Time)
 
-    retr_forecast = Rhat_df.loc[reference_date].item()
-    retr_actual = R_df.loc[reference_date].item()
+    # retr_forecast = Rhat_df.loc[reference_date].item()
+    # retr_actual = R_df.loc[reference_date].item()
+
+    retr_backcast = Rhat_df.loc[:lag_date]
+    retr_actuals = R_df.loc[:lag_date]
 
     # print("\n============ Forecast vs Actual ============")
     # print(f"Reference Date            : {reference_date}")
@@ -772,9 +965,9 @@ def estimate_var_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
                     "Model Name": model_result["model"],
                     "Series Code": parameters["y_code"],
                     "Reference Date": reference_date,
-                    "R-Squared": model_result['r_squared'],
-                    "MAPE": ((bounds_level["Predicted"] - retransformed_actual) / retransformed_actual).mean(),
-                    "RMSE": f"{model_result['rmse']:.4f}",
+                    "R-Squared": r2_score(y_true=retr_actuals, y_pred=retr_backcast),
+                    "MAPE": mape(actual=retr_actuals, predicted=retr_backcast),
+                    "RMSE": rmse(actual=retr_actuals, predicted=retr_backcast),
                 },
                 orient="index",
                 columns=["Value"],

@@ -5,6 +5,7 @@ from dash.exceptions import PreventUpdate
 from pathlib import Path
 from kedro.framework.session import KedroSession
 from kedro.framework.startup import bootstrap_project
+from kedro.runner import SequentialRunner
 import os
 import subprocess
 import socket
@@ -62,17 +63,13 @@ def register_callbacks(app, project_root):
                 with KedroSession.create(Path(project_root)) as session:
                     session.run()
                 return html.Div([
-                    html.Span(ICON.DIAMOND), html.Span("Nowcasting pipeline state: "),
-                    html.Span("Pipeline executed successfully!", style={"color": "green"})
+                    html.Span(ICON.DIAMOND, className='me-1'), html.Span("Pipeline executed successfully!", style={"color": "green"})
                 ])
             except Exception as e:
                 return html.Div([
-                    html.Span(ICON.DIAMOND), html.Span("Nowcasting pipeline state: "),
-                    html.Span(f"Pipeline execution failed: {str(e)}", style={"color": "red"})
+                    html.Span(ICON.DIAMOND, className='me-1'), html.Span(f"Pipeline execution failed: {str(e)}", style={"color": "red"})
                 ])
-        return html.Div([
-            html.Span(ICON.DIAMOND), html.Span("Nowcasting pipeline state: "), html.Span(html.Span("Idle", style={"color": "#585858"}))
-            ])
+        return html.Div([html.Span("")])
 
     @app.callback(
         Output("pipeline-viz", "children"),
@@ -84,24 +81,25 @@ def register_callbacks(app, project_root):
     def manage_pipeline_viz(start_clicks, stop_clicks):
         global kedro_viz_process, viz_port
 
-        # def __find_free_port(port=5001, max_port=65535):
-        #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #     while port <= max_port:
-        #         try:
-        #             sock.bind(("", port))
-        #             sock.close()
-        #             return port
-        #         except OSError:
-        #             port += 1
-        #     raise IOError("no free ports")
+        def __find_free_port(port=5003, max_port=65535):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            while port <= max_port:
+                try:
+                    sock.bind(("", port))
+                    sock.close()
+                    return port
+                except OSError:
+                    port += 1
+            raise IOError("no free ports")
 
         # Start Kedro Viz
         if start_clicks > 0:
             if kedro_viz_process is None or kedro_viz_process.poll() is not None:
                 try:
-                    # viz_port = __find_free_port()
-                    viz_port = 5000
-                    host_port = 1999
+                    viz_port = __find_free_port()
+                    # viz_port = 5000
+                    # host_port = 1999
+                    host_port = viz_port
 
                     # Start Kedro Viz in a new process group
                     kedro_viz_process = subprocess.Popen(
@@ -129,7 +127,7 @@ def register_callbacks(app, project_root):
                     )
                 except Exception as e:
                     return html.Div(
-                        f"Failed to start Kedro Viz: {str(e)}", style={"color": "red"}
+                        f"✨ Failed to start Kedro Viz: {str(e)}", style={"color": "red"}
                     )
 
         # Stop Kedro Viz
@@ -141,7 +139,7 @@ def register_callbacks(app, project_root):
                     kedro_viz_process.wait(timeout=5)  # Ensure the process terminates
                     kedro_viz_process = None  # Reset the process variable
                     viz_port = None  # Reset the port variable
-                    return html.Div("✨ Kedro Viz has been stopped.")
+                    return html.Div("✨ Kedro Viz has been stopped.", className="text-muted")
                 except subprocess.TimeoutExpired:
                     return html.Div(
                         "✨ Failed to stop Kedro Viz: Timeout occurred.",
@@ -153,9 +151,7 @@ def register_callbacks(app, project_root):
                     )
 
         # Default output if no action is triggered
-        return html.Div([
-            html.Span("✨ Kedro-Viz state: "), html.Span(html.Span("Idle", style={"color": "#585858"}))
-            ])
+        return html.Div([html.Span("")])
 
     # Callback to toggle the modal visibility
     @app.callback(
@@ -441,7 +437,7 @@ def register_callbacks(app, project_root):
             raise PreventUpdate  # Do not update if no data
 
         data_watermark = f'⏳ Data as of Date: {pd.to_datetime(shared_data["nowcast_header"]["Data as of"], dayfirst=True).strftime("%-m/%-d/%Y %-I:%M %p CET")}'
-        nowcast_watermark = f'⌛️ Last Run Watermark: {pd.to_datetime(shared_data["nowcast_header"]["Last Run Watermark"], dayfirst=True).strftime("%-m/%-d/%Y %-I:%M %p CET")}'
+        nowcast_watermark = f'Last Run Watermark: {pd.to_datetime(shared_data["nowcast_header"]["Last Run Watermark"], dayfirst=True).strftime("%-m/%-d/%Y %-I:%M %p CET")}'
 
         return (
             data_watermark,
@@ -638,3 +634,15 @@ def register_callbacks(app, project_root):
         # print(data, "{:,.1f}".format(value).rstrip(".0"), children, selected_option)
 
         return data, "{:,.1f}".format(value).rstrip(".0"), children, selected_option
+
+    @app.callback(
+        Output('legend-hidden-row', 'style'),
+        Output('legend-toggle-btn', 'children'),
+        Input('legend-toggle-btn', 'n_clicks'),
+        prevent_initial_call=True
+    )
+    def toggle_legend(n):
+        if n and n % 2 == 1:
+            return {'display': 'flex', 'justifyContent': 'center', 'gap': '20px', 'flexWrap': 'wrap', 'marginBottom': '8px'}, "Show less"
+        else:
+            return {'display': 'none', 'justifyContent': 'center', 'gap': '20px', 'flexWrap': 'wrap', 'marginBottom': '8px'}, "Show more"
