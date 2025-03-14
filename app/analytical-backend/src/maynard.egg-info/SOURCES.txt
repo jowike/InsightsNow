@@ -18,5 +18,6 @@ src/maynard/pipelines/default/nodes.py
 src/maynard/pipelines/default/pipeline.py
 tests/test_import.py
 tests/test_pipeline.py
-tests/__pycache__/test_import.cpython-312-pytest-8.3.3.pyc
-tests/__pycache__/test_pipeline.cpython-312-pytest-8.3.3.pyc
+tests/tests.ipynb
+tests/__pycache__/test_import.cpython-312.pyc
+tests/__pycache__/test_pipeline.cpython-312.pyc
