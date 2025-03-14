@@ -24,3 +24,4 @@ Requires-Dist: fastparquet
 Requires-Dist: mifs@ git+https://github.com/jowike/mifs.git@maynard
 Requires-Dist: pmdarima
 Requires-Dist: linear-tree
+Requires-Dist: shap

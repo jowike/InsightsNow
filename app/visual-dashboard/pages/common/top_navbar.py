@@ -19,12 +19,24 @@ def infoControl():
             # Info Icon
             html.Span(
                 [
-                    html.I(ICON.INFO, style={"margin-left": "7.5px", "margin-right": "10px", "position": "relative", "top": "-1px"}),  # Align icon to the top
-                    html.Span("Read Me", style={"margin-right": "7.5px"})
+                    html.Span(
+                        "Let the Journey Begin: Step-by-Step Guide 🧶",
+                        style={
+                            "fontWeight": "500",
+                            "fontSize": "14px",
+                            "color": "#472C4C"  # "6A5294"  # "#6F5D00", #8E4E1B, #6A5294
+                        }
+                    )
                 ],
-                className="input-group-text text-gray-800 me-10",
-                id="info-icon",  # ID for triggering modal
+                className="input-group-text bg-light border px-1 shadow-sm px-3",  # 
+                id="info-icon",
+                style={
+                    "height": "42px",
+                    "cursor": "pointer",
+                    # "backgroundColor": "#E8E9EB"
+                    }
             ),
+
 
             # Modal for Guidelines
             dbc.Modal(
@@ -40,7 +52,7 @@ def infoControl():
                                 ", bolstering informed decision making with timely, accurate nowcasts — available in  ",
                                 html.Strong("minutes, not weeks"), "."
                             ]),
-                        html.H6("🪄 Key assets", className="mt-4 fw-bold"),
+                        html.H6("🚀 Key assets", className="mt-4 fw-bold"),
                         html.Ul([
                             html.Li([
                                 html.B("Data"), 
@@ -71,7 +83,7 @@ def infoControl():
                             "It provides a clear visualization of real-time estimates against historical data, supporting data-driven decision-making."
                         ]),
 
-                        html.H6("🧮 Tiles", className="fw-bold"),
+                        html.H6("🔖 Tiles", className="fw-bold"),
                         html.Ul([
                             html.Li([
                                 html.Strong("Prediction Uncertainty"), 
@@ -94,7 +106,7 @@ def infoControl():
                             ])
                         ]),
 
-                        html.H6("🧩 Local Explanation", className="fw-bold"),
+                        html.H6("📊 Local Explanation", className="fw-bold"),
                         html.P([
                             html.Strong("The Local Explanation"), 
                             " table details the impact of each variable on the model’s predictions. "
@@ -104,7 +116,7 @@ def infoControl():
                             " for the latest reporting periods of the variables that drive predictions."
                         ]),
 
-                        html.H6("📊 Global Explanation", className="fw-bold"),
+                        html.H6("🌏 Global Explanation", className="fw-bold"),  # 〽️
                         html.P([
                             html.Strong("The Global Explanation"), 
                             " provides a broader view of how predicted indicators co-move with explanatory variables contributing to the forecast. ",
@@ -136,7 +148,7 @@ def infoControl():
                         ]),
                         html.P("This ensures transparency in data processing and enables users to track the progress of ongoing estimations."),
 
-                        html.H6("⚠️ Model Assessment", className="fw-bold"),
+                        html.H6("🧮 Model Assessment", className="fw-bold"),
                         html.P("Gives an overview of key evaluation metrics for predictive analytics, helping assess the accuracy and reliability of nowcasts."),
 
                         html.H5("How to Use?", className="fw-bold"),
@@ -203,7 +215,7 @@ def topNavBar():
         html.Div([
             html.Div([
                 html.Div([
-                    infoControl()
+                    # infoControl(),
                 ], className='d-flex align-items-center')
             ], className='d-flex justify-content-between w-100', id='navbarSupportedContent')
         ], className='container-fluid px-0')
