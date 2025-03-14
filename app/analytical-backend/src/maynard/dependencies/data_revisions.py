@@ -73,7 +73,9 @@ def prepare_real_time_vintage_data(
                 .sort_index()
                 .ffill()
             )
-            if series_pivot.index.min().strftime("%Y-%m-%d") >= pub_date_limit:
+            series_min_index = series_pivot.index.min()
+            if series_min_index is None: continue
+            if series_min_index.strftime("%Y-%m-%d") >= pub_date_limit:
                 print(
                     f"The observation for {variable_code} was unavailable before {pub_date_limit}."
                 )
@@ -84,7 +86,7 @@ def prepare_real_time_vintage_data(
             else:
                 pivot_limit = series_pivot[series_pivot.index < pub_date_limit]
 
-                last_release_dt = (
+                last_release_index = (
                     pivot_limit[
                         min(
                             max(pivot_limit.dropna(how="all", axis=1).columns), ref_date
@@ -92,8 +94,9 @@ def prepare_real_time_vintage_data(
                     ]
                     .dropna(how="all")
                     .last_valid_index()
-                    .strftime("%Y-%m-%d")
                 )
+                if last_release_index is None: continue 
+                last_release_dt = last_release_index.strftime("%Y-%m-%d")
 
                 series = pivot_limit.loc[last_release_dt].to_frame()
                 series = series.loc[
@@ -136,8 +139,12 @@ def prepare_real_time_vintage_data(
         .sort_index()
         .ffill()
     )
+    first_valid_index = y_pivot[ref_date].first_valid_index()
 
-    y_first_est_release_dt = y_pivot[ref_date].first_valid_index().strftime("%Y-%m-%d")
+    if first_valid_index is None:
+        return
+    
+    y_first_est_release_dt = first_valid_index.strftime("%Y-%m-%d")
     X_df = ds[ds[series_code_col] != y_code]
 
     # Call the nested helper function for non-target series

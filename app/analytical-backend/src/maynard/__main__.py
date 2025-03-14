@@ -81,7 +81,9 @@ def run(
     return run_command(args=kedro_args, standalone_mode=standalone_mode)
 
 @app.command()
-def viz():
+def viz(
+    port: str = typer.Option(None, "--port", help=""),
+):
     """Launch Kedro Viz with an available port"""
 
     def __find_free_port(port=5001, max_port=65535):
@@ -95,11 +97,14 @@ def viz():
                 port += 1
         raise IOError("no free ports")
 
-    try:
-        viz_port = __find_free_port()
-    except IOError:
-        typer.echo("🚨 No free ports available for Kedro Viz!", err=True)
-        raise typer.Exit(1)
+    if port:
+        viz_port = port
+    else:
+        try:
+            viz_port = __find_free_port()
+        except IOError:
+            typer.echo("🚨 No free ports available for Kedro Viz!", err=True)
+            raise typer.Exit(1)
 
     try:
         package_name = Path(__file__).parent.name

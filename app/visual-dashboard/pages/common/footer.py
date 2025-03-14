@@ -5,7 +5,7 @@ def footer():
         html.Div([
             html.Div([
                 html.P([
-                    "© 2019-",
+                    "© 2025-",
                     html.Span(className='current-year'),
                     dcc.Link("Themesberg", className='text-primary fw-normal', href='https://themesberg.com', target='_blank')
                 ], className='mb-0 text-center text-lg-start')

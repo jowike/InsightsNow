@@ -31,6 +31,7 @@ dependencies = [
     "mifs @ git+https://github.com/jowike/mifs.git@maynard",  # Custom MIFS fork
     "pmdarima",
     "linear-tree",
+    "shap",
     ]
 
 
