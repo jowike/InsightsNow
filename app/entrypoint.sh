@@ -5,7 +5,7 @@ echo "Upgrading pip..."
 python -m pip install --upgrade pip
 
 echo "Installing dependencies from setup.py..."
-cd app/visual-dashboard
+cd /app/visual-dashboard
 python setup.py install
 
 echo "Starting dashboard application..."
