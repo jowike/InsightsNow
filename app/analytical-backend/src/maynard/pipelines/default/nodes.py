@@ -449,9 +449,31 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
 
     retr_forecast = Rhat_df.loc[reference_date].item()
     retr_actual = R_df.loc[reference_date].item()
-    retr_lag = R_df.loc[lag_date].item()
+    # retr_lag = R_df.loc[lag_date].item()
 
-    contributions = calculate_contributions(coef_, retr_forecast, retr_lag, values)
+    # contributions = calculate_contributions(coef_, retr_forecast, retr_lag, values)
+
+    # Shap-based impact assessment
+    # [SHAP] Rozwiązanie 2. (plan A): Powiedzmy, że to "expected value" to byłaby nasza uśredniona prognoza, a jeśli to prognoza to możemy ją sobie normalnie retransformować używając indexu zbioru treningowego. Więc jeśli modelujemy np. zmianę procentową, to możemy zrobić procentową retransformację zarówno prognozy jak i expected value. Wtedy jak wrzucimy obydwie wartości w tę samą retransformację opartą o tę samą (ostatnią) obserwację ze zbioru treningowego, to nie ma bata, ale zależność miedzy expected i predicted values przed i po retransformacji muszą być takie same.
+    # Retransform expected value
+    Ehat, Time, cutoff_date = cast_to_base_unit(
+        ds_base, spec, parameters["y_code"], model_result["expected_value"], dtype="pred"
+    )
+
+    header = [parameters["y_code"]]
+    Ehat_df = pd.DataFrame(Ehat, columns=header, index=Time)
+
+    expected_retransformed = Ehat_df.loc[reference_date].item()
+
+    shap_values = model_result["shap_values"]
+
+    shap_diff = retr_forecast - expected_retransformed
+    shap_contributions = pd.DataFrame({"variable_id": list(coef_.index),
+                            "coef_": coef_,
+                            "value": values,
+                            "shap_value": shap_values,
+                            "impact": shap_values*(shap_diff/shap_values.sum())  # Shap retransformed
+                            })
 
     # print("\n============ Forecast vs Actual ============")
     # print(f"Reference Date            : {reference_date}")
@@ -508,7 +530,7 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
         )
         sheet1.to_excel(writer, sheet_name="Model Details", index=False)
         # Save contributions
-        contributions.to_excel(writer, sheet_name="Contributions")
+        shap_contributions.to_excel(writer, sheet_name="Contributions")
 
         # Save confidence bounds
         pd.DataFrame(bounds_level).to_excel(writer, sheet_name="Confidence Bounds")

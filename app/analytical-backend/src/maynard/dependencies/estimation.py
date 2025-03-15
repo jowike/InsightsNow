@@ -13,8 +13,15 @@ from sklearn.ensemble import RandomForestRegressor
 from lineartree import LinearForestRegressor, LinearBoostRegressor
 from statsmodels.tsa.api import VAR
 
+import shap
+
 
 def ml_fit_predict(ds, ref_date_col, model, series_name, reference_date, n_periods):
+
+    # Define the prediction function for the model
+    def predict_fn(X):
+        return model.predict(X)  # Make sure this returns the correct shape for predictions
+
     reference_date = pd.to_datetime(reference_date, format="%Y-%m-%d")
 
     df = _convert_to_datetime(df=ds, colnames=[ref_date_col])
@@ -43,19 +50,6 @@ def ml_fit_predict(ds, ref_date_col, model, series_name, reference_date, n_perio
         model.fit(X_train, y_train)
         pred_ = model.predict(X_test)
 
-        # Coefficients values
-        try:
-            coef_ = pd.Series(model.coef_, index=X_train.columns)
-        except AttributeError:
-            coef_ = pd.Series(model.feature_importances_, index=X_train.columns)
-        except ValueError:
-            coef_ = pd.Series(
-                model.base_estimator_.fit(X_train, y_train).coef_[0],
-                index=X_train.columns,
-            )
-
-        # TODO: calculate contributions for each forecast
-
         yhat = pd.concat(
             [
                 yhat,
@@ -66,7 +60,27 @@ def ml_fit_predict(ds, ref_date_col, model, series_name, reference_date, n_perio
             ]
         )
 
-    return coef_, yhat, T, X_test.squeeze(axis=0), len(T)
+    # Coefficients values
+    try:
+        coef_ = pd.Series(model.coef_, index=X_train.columns)
+    except AttributeError:
+        coef_ = pd.Series(model.feature_importances_, index=X_train.columns)
+    except ValueError:
+        coef_ = pd.Series(
+            model.base_estimator_.fit(X_train, y_train).coef_[0],
+            index=X_train.columns,
+        )
+
+    # [SHAP] Rozwiązanie 2. (plan A): Powiedzmy, że to "expected value" to byłaby nasza uśredniona prognoza, a jeśli to prognoza to możemy ją sobie normalnie retransformować używając indexu zbioru treningowego. Więc jeśli modelujemy np. zmianę procentową, to możemy zrobić procentową retransformację zarówno prognozy jak i expected value. Wtedy jak wrzucimy obydwie wartości w tę samą retransformację opartą o tę samą (ostatnią) obserwację ze zbioru treningowego, to nie ma bata, ale zależność miedzy expected i predicted values przed i po retransformacji muszą być takie same.
+    background_data = shap.kmeans(X_train, k=60)
+    explainer = shap.KernelExplainer(predict_fn, background_data)
+    shap_values = pd.Series(explainer.shap_values(X_test)[0], index=X_train.columns)
+    expected_value = pd.Series(explainer.expected_value, index = X_test.index)
+    expected_value.index.name = "reference_date"
+
+    # TODO: elasticity-based impact assessment (contributions)
+
+    return coef_, expected_value, shap_values, yhat, T, X_test.squeeze(axis=0), len(T)
 
 
 def arima_fit_predict(ds, ref_date_col, series_name, reference_date, n_periods):
@@ -202,9 +216,10 @@ def select_model_by_r2(models_results, y_actual):
         "r_squared": r2_scores[best_model],
         "coef_": models_results[best_model].pop("coef_"),
         "values": models_results[best_model].pop("values"),
+        "expected_value": models_results[best_model].pop("expected_value"),
+        "shap_values": models_results[best_model].pop("shap_values"),
         "pred_": models_results[best_model],
     }
-
 
 # def cast_to_base_unit(ds, model_result, spec, series_name):
 #     Spec = cast_spec_to_dict(spec.loc[spec["seriesid"] == series_name])
@@ -309,16 +324,16 @@ def estimate_automl(
         "LinearForest": LinearForestRegressor(
             base_estimator=Ridge(), random_state=42, max_features="log2"
         ),
-        "LinearBoost": LinearBoostRegressor(
-            base_estimator=Ridge(), random_state=42, max_features="log2"
-        ),
+        # "LinearBoost": LinearBoostRegressor(
+        #     base_estimator=Ridge(), random_state=42, max_features="log2"
+        # ),
         "RandomForestRegressor": RandomForestRegressor(),
     }
 
     models_results = {}
     n_est = 0
     for model_name, model in models.items():
-        coef_, pred, T, values, n_iter= ml_fit_predict(
+        coef_, expected_value, shap_values, pred, T, values, n_iter= ml_fit_predict(
             ds=ds,
             ref_date_col=ref_date_col,
             model=model,
@@ -332,9 +347,12 @@ def estimate_automl(
             "forecast": pred["y_pred"].loc[reference_date],
             "reference_date": reference_date,
             "coef_": coef_,
+            "expected_value": expected_value,
+            "shap_values": shap_values,
             "values": values,
         }
         n_est = n_est + n_iter
+
     # Ensure all predictions align with the actuals index
     y_actual = ds.set_index(ref_date_col).loc[T].sort_index()[series_name]
 

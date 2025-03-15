@@ -88,9 +88,10 @@ def load_contributions(
         # Prepare the ordered dictionary
 
         df['Change'] = ['Up' if x > 0 else 'Down' if x < 0 else '' for x in df['Impact']]  # Adding 'Up' or 'Down' based on 'Impact'
-        df["Impact"] = df["Impact"].map(lambda x: f"{x:.4f}")
+        to_display = df.loc[df["Impact"] != 0]
+        to_display.loc[:, "Impact"] = to_display["Impact"].map(lambda x: f"{x:.4f}").astype(float)
         
-        return df[['Release Date', "Data Series", "Impact", "Change"]].to_dict('records'), df["Series ID"].tolist()
+        return to_display[['Release Date', "Data Series", "Impact", "Change"]].to_dict('records'), to_display["Series ID"].tolist()
     return None
 
 
