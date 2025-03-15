@@ -31,6 +31,7 @@ def install_packages():
         "pip install dash_chartist",
         "pip install dash_loading_spinners",
         "pip install diskcache",
+        "pip install shap"
     ]
     for cmd in commands:
         run_command(cmd)
