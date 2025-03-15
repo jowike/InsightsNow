@@ -1,6 +1,7 @@
 import sys
 
 sys.path.append("src/maynard/dependencies")
+sys.path.append("/Users/ejowik001/Desktop/Github/InsightsNow/app/analytical-backend/src/maynard/dependencies")
 
 import pandas as pd
 import numpy as np

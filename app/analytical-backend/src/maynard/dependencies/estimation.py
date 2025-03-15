@@ -74,7 +74,7 @@ def ml_fit_predict(ds, ref_date_col, model, series_name, reference_date, n_perio
     # [SHAP] Rozwiązanie 2. (plan A): Powiedzmy, że to "expected value" to byłaby nasza uśredniona prognoza, a jeśli to prognoza to możemy ją sobie normalnie retransformować używając indexu zbioru treningowego. Więc jeśli modelujemy np. zmianę procentową, to możemy zrobić procentową retransformację zarówno prognozy jak i expected value. Wtedy jak wrzucimy obydwie wartości w tę samą retransformację opartą o tę samą (ostatnią) obserwację ze zbioru treningowego, to nie ma bata, ale zależność miedzy expected i predicted values przed i po retransformacji muszą być takie same.
     background_data = shap.kmeans(X_train, k=60)
     explainer = shap.KernelExplainer(predict_fn, background_data)
-    shap_values = pd.Series(explainer.shap_values(X_test)[0], index=X_train.columns)
+    shap_values = pd.Series(explainer.shap_values(X_test, silent=True)[0], index=X_train.columns)
     expected_value = pd.Series(explainer.expected_value, index = X_test.index)
     expected_value.index.name = "reference_date"
 
