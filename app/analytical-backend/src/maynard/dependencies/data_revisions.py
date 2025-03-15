@@ -1,53 +1,85 @@
 import os
 import pandas as pd
 import numpy as np
-from tools import _align_dates, _convert_to_datetime
+from typing import List, Tuple
+
+from maynard.dependencies.tools import _align_dates, _convert_to_datetime
+
 import warnings
 
 warnings.filterwarnings("ignore")
 
 
 def prepare_real_time_vintage_data(
-    ds,
-    y_code,
-    ref_date,
-    series_code_col,
-    ref_date_col,
-    pub_date_col,
-    series_val_col,
-):
+    ds: pd.DataFrame,
+    y_code: str,
+    ref_date: str,
+    series_code_col: str,
+    ref_date_col: str,
+    pub_date_col: str,
+    series_val_col: str,
+) -> pd.DataFrame:
     """
-    Prepares an actual real-time dataset for a given reference date, adjusting for data publication schedules.
+    Builds a real-time vintage snapshot as of a given reference date.
 
-    Parameters:
-    - ds (pd.DataFrame): The dataset containing time series with reference and publication dates.
-    - y_code (str): The code of the target variable (e.g., GDP).
-    - ref_date (str): The reference date for which to prepare data.
-    - series_code_col (str): Column name for the series code.
-    - ref_date_col (str): Column name for the reference date.
-    - pub_date_col (str): Column name for the publication date.
-    - series_val_col (str): Column name for the series values.
-    - out_path (str, optional): Directory path for saving the output file.
+    This function reconstructs how the dataset would have looked at a specific point in time,
+    using only data that was actually available then. For each predictor, it selects the most
+    recent value published *before* the first official estimate of the target variable (`y_code`)
+    at the given reference date.
 
-    Returns:
-    - pd.DataFrame: A long-format DataFrame containing real-time dataset prepared for the target reference date.
+    Parameters
+    ----------
+    ds : pd.DataFrame
+        The full long-format dataset with time series values and associated reference/publication dates.
+    y_code : str
+        Series code for the target variable (e.g., "GDP").
+    ref_date : str
+        The reference date for building the vintage snapshot (e.g., "2020-03-01").
+    series_code_col : str
+        Name of the column containing the series codes (e.g., "CODE").
+    ref_date_col : str
+        Name of the column with reference dates (e.g., "REF_DATE").
+    pub_date_col : str
+        Name of the column with publication dates (e.g., "PUB_DATE").
+    series_val_col : str
+        Name of the column containing the observed values (e.g., "VALUE").
+
+    Returns
+    -------
+    pd.DataFrame
+        A long-format DataFrame with real-time vintage values for all series,
+        aligned with what would have been available as of the reference date.
     """
 
-    def _format_individual_series(df, ref_date, pub_date_limit):
+    def _format_individual_series(
+        df: pd.DataFrame,
+        ref_date: pd.Timestamp,
+        pub_date_limit: str,
+    ) -> Tuple[pd.DataFrame, List[str]]:
         """
-        This function is structured to process each non-target variable code to create a long format series
-        based on available data up to a specified publication date (it extracts the last release dates
-        up to a specified publication limit).
+        Prepares real-time series for each non-target variable up to a given publication date.
 
-        Parameters:
-        - df (pd.DataFrame): Subset of the dataset containing only non-target series.
-        - ref_date (pd.Timestamp): Date for which the data should be evaluated.
-        - pub_date_limit (pd.Timestamp): Maximum publication date to consider.
+        For each explanatory variable, this function selects the latest data release
+        available before the target publication date and reshapes it into a long-format
+        series. This simulates what would have been known in real time.
 
-        Returns:
-        - pd.DataFrame: Long-format DataFrame for each non-target series up to the specified publication date.
-        - list: List of series codes with missing data (null columns).
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Subset of the full dataset containing only non-target series.
+        ref_date : pd.Timestamp
+            The reference date for which the vintage dataset is being built.
+        pub_date_limit : str
+            The latest publication date allowed (i.e., the first release date for the target series).
+
+        Returns
+        -------
+        Tuple[pd.DataFrame, List[str]]
+            - A long-format DataFrame with one row per date and series value, limited to data
+            that would have been published before `pub_date_limit`.
+            - A list of series codes that still contain missing values after processing.
         """
+
         df_long = pd.DataFrame(
             columns=[series_code_col, ref_date_col, pub_date_col, series_val_col]
         )
@@ -73,7 +105,10 @@ def prepare_real_time_vintage_data(
                 .sort_index()
                 .ffill()
             )
-            if series_pivot.index.min().strftime("%Y-%m-%d") >= pub_date_limit:
+            series_min_index = series_pivot.index.min()
+            if series_min_index is None:
+                continue
+            if series_min_index.strftime("%Y-%m-%d") >= pub_date_limit:
                 print(
                     f"The observation for {variable_code} was unavailable before {pub_date_limit}."
                 )
@@ -84,7 +119,7 @@ def prepare_real_time_vintage_data(
             else:
                 pivot_limit = series_pivot[series_pivot.index < pub_date_limit]
 
-                last_release_dt = (
+                last_release_index = (
                     pivot_limit[
                         min(
                             max(pivot_limit.dropna(how="all", axis=1).columns), ref_date
@@ -92,8 +127,10 @@ def prepare_real_time_vintage_data(
                     ]
                     .dropna(how="all")
                     .last_valid_index()
-                    .strftime("%Y-%m-%d")
                 )
+                if last_release_index is None:
+                    continue
+                last_release_dt = last_release_index.strftime("%Y-%m-%d")
 
                 series = pivot_limit.loc[last_release_dt].to_frame()
                 series = series.loc[
@@ -136,8 +173,12 @@ def prepare_real_time_vintage_data(
         .sort_index()
         .ffill()
     )
+    first_valid_index = y_pivot[ref_date].first_valid_index()
 
-    y_first_est_release_dt = y_pivot[ref_date].first_valid_index().strftime("%Y-%m-%d")
+    if first_valid_index is None:
+        return
+
+    y_first_est_release_dt = first_valid_index.strftime("%Y-%m-%d")
     X_df = ds[ds[series_code_col] != y_code]
 
     # Call the nested helper function for non-target series

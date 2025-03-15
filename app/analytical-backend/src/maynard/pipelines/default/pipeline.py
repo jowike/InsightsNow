@@ -28,15 +28,6 @@ def create_pipeline(**kwargs) -> Pipeline:
                 outputs=["vintage_data", "spec"],
                 name="prepare_vintage_data_node",
             ),
-            # node(
-            #     func=suggest_spec,
-            #     inputs=[
-            #         "revision_history",
-            #         "params:options",
-            #         ],
-            #     outputs="ds_spec",
-            #     name="suggest_spec_node",
-            # ),
             node(
                 func=harmonize_ragged_edges,
                 inputs=[
@@ -44,54 +35,54 @@ def create_pipeline(**kwargs) -> Pipeline:
                     "spec",
                     "params:options",
                 ],
-                outputs="harmonized_data",
+                outputs="ragged_edge_aligned",
                 name="harmonize_ragged_edges_node",
             ),
             node(
                 func=transform_time_series,
                 inputs=[
-                    "harmonized_data",
+                    "ragged_edge_aligned",
                     "spec",
                     "params:options",
                 ],
-                outputs=["transformed_aligned_data", "aligned_non_transformed_data"],
+                outputs=["transformed_aligned", "raw_aligned"],
                 name="transform_time_series_node",
             ),
             node(
                 func=test_variance,
                 inputs=[
-                    "transformed_aligned_data",
+                    "transformed_aligned",
                     "spec",
                     "params:options",
                 ],
-                outputs="transformed_data_var",
+                outputs="filtered_by_variance",
                 name="test_variance_node",
             ),
             node(
                 func=test_stationarity,
                 inputs=[
-                    "transformed_data_var",
+                    "filtered_by_variance",
                     "spec",
                     "params:options",
                 ],
-                outputs="transformed_data_stat",
+                outputs="filtered_stationary",
                 name="test_stationarity_node",
             ),
             node(
                 func=apply_series_selection,
                 inputs=[
-                    "transformed_data_stat",
+                    "filtered_stationary",
                     "spec",
                     "params:options",
                 ],
-                outputs="selected_series",
+                outputs="final_selected_features",
                 name="select_series_node",
             ),
             node(
                 func=estimate_ml_node,
                 inputs=[
-                    "selected_series",
-                    "aligned_non_transformed_data",
+                    "final_selected_features",
+                    "raw_aligned",
                     "spec",
                     "params:options",
                 ],
@@ -101,8 +92,8 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 func=estimate_arima_node,
                 inputs=[
-                    "selected_series",
-                    "aligned_non_transformed_data",
+                    "final_selected_features",
+                    "raw_aligned",
                     "spec",
                     "params:options",
                 ],
@@ -112,8 +103,8 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 func=estimate_var_node,
                 inputs=[
-                    "selected_series",
-                    "aligned_non_transformed_data",
+                    "final_selected_features",
+                    "raw_aligned",
                     "spec",
                     "params:options",
                 ],
@@ -125,14 +116,14 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=[
                     "spec",
                     "revision_history",
-                    "aligned_non_transformed_data",
+                    "raw_aligned",
                     "params:options",
                     "ar_estimation_results",
                     "ml_estimation_results",
                     "var_estimation_results"
                 ],
-                outputs="dash_data_model",
-                name="collect_results",
+                outputs="results",
+                name="collect_results_node",
             ),
         ]
     )

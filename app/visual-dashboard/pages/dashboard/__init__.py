@@ -1,12 +1,10 @@
-from .sales_chart import salesChart
-from .cards import customers, revenue, bounceRate
-from .page_visits_table import pageVisitsTable
-from .team_members import teamMembers
-from .progress_track import progressTrack
-from .total_orders import totalOrdersBarChart
-from .global_rank import rankingPanel
-from .acquisition import acquisition
-from .button_bar_buttons import newTasksButton, runButton, tableAction
-from .alerts_notifications import alertsNotifications
-from .modal import modal
-from .upload import upload_modal
+from .chart_global import globalExplanationBarChart
+from .table_local import localExplanationTable
+from .modal_info import infoControl
+from .modal_upload import uploadModal
+from .modal_settings import settingsModal
+from .cards import uncertainty, var, arima
+from .chart_nowcast import nowcastChart
+from .button_bar_buttons import settingsButton, runButton, vizButton
+from .div_watermarks import watermarksDiv
+from .div_assessment import assessmentDiv

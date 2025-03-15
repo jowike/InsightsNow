@@ -14,46 +14,44 @@ def retransform_(
     cutoff_date: datetime,
 ) -> np.ndarray:
     """
-    Retransforms predictions back to their original form based on specified transformations.
+    Converts transformed predictions back to their original values.
 
-    This function takes stationary (transformed) data and reverts it to its original scale using the
-    transformation specifications provided. It handles various types of transformations such as linear
-    levels, changes, percent changes, and logarithmic transformations.
+    This function takes data that was previously transformed to be stationary (like changes, log returns, etc.)
+    and brings it back to the original scale using the provided transformation specs. It supports multiple
+    common transformation types such as levels, differences, percent changes, and logs.
 
     Parameters
     ----------
     X : np.ndarray
-        Transformed data (stationary), with shape (H, N), where H is the number of periods and N is the
-        number of series.
+        The transformed forecast data (stationary), shape (H, N) — H is the number of time points,
+        N is the number of series.
     Z : np.ndarray
-        Nominal (raw) data in base units, with shape (H, N).
+        The original (untransformed) historical data, shape (H, N).
     Time : np.ndarray
-        Observation periods for the time series data, typically as datetime objects.
+        Time index for the series, typically as datetime objects.
     Spec : dict
-        Model specification containing transformation details. It should include the following keys:
-            - "transformation": List of transformation types for each series.
-            - "frequency": List of frequencies (e.g., 'm' for monthly) for each series.
-            - "seriesid": List of series identifiers.
-            - "seriesname": List of series names.
+        A dictionary with transformation settings. It should include:
+            - "transformation": List of how each series was transformed.
+            - "frequency": List of data frequencies, like 'm' for monthly.
+            - "seriesid": IDs for each series.
+            - "seriesname": Human-readable names for each series.
     header : list
-        Original data headers corresponding to each series.
+        List of column names, expected to match the series IDs.
     cutoff_date : datetime
-        The date marking the beginning of the transformed records. All data from this date onward
-        are treated as forecasts.
+        The date where the forecast period starts — everything from this date onward is considered predicted.
 
     Returns
     -------
     np.ndarray
-        Retransformed data in original form, with shape (H, N). This array includes both historical
-        data from `Z` and retransformed forecasts from `X`.
+        A NumPy array with shape (H, N) that includes both historical values and retransformed forecasts.
 
     Raises
     ------
     AssertionError
-        If any header in `header` does not match the corresponding `Spec["seriesid"]`.
+        If a header name doesn't match the corresponding series ID from `Spec`.
     Warning
-        If an unknown transformation type is encountered for any series, the function will issue a
-        warning and use the untransformed data for that series.
+        If the transformation type is unknown for any series, a warning is issued, and the function
+        returns the series without any retransformation.
 
     Examples
     --------
@@ -136,7 +134,3 @@ def retransform_(
 
 
 # Example usage retransform_data(X, Z, Time, Spec, header, datetime(2023, 1, 1))
-
-# def retransform_prediction(transf_series, base_series, Spec, series_name):
-
-#     return R, Time
