@@ -186,16 +186,37 @@ def harmonize_ragged_edges(
     parameters,
 ):
     to_write = pd.DataFrame()
+    ds[parameters["ref_date_col"]] = pd.to_datetime(ds[parameters["ref_date_col"]])
+    reference_date = pd.to_datetime(parameters["ref_date"])
+    lag_date = reference_date - relativedelta(month=1)
+
     for freq_desc in spec["frequency"].unique():
-        series_codes = spec.loc[spec["frequency"] == freq_desc]["seriesid"]
+        series_codes = list(
+            spec.loc[
+                (spec["frequency"] == freq_desc) 
+                ]["seriesid"]
+        )
         subset = ds.loc[ds[parameters["series_code_col"]].isin(series_codes)]
         if subset.shape[0]:
-            df_f_pivot = subset.pivot(
+            df_wide = subset.pivot(
                 index=parameters["ref_date_col"],
                 columns=parameters["series_code_col"],
                 values=parameters["series_val_col"],
             )
-            res_i = shift_to_fill_trailing_nans(df_f_pivot)
+
+            if parameters["y_code"] in series_codes:
+                X_df = df_wide.drop(columns=[parameters["y_code"]])
+                y_df = df_wide[[parameters["y_code"]]]
+
+                res_i = pd.merge(
+                    shift_to_fill_trailing_nans(X_df.loc[:reference_date]),
+                    y_df,  # y_df.loc[:lag_date],
+                    how="left",
+                    left_index=True,
+                    right_index=True
+                )
+            else:
+                res_i = shift_to_fill_trailing_nans(df_wide.loc[:reference_date])
 
             to_write = pd.concat(
                 [to_write, pd.melt(res_i, value_vars=res_i.columns, ignore_index=False)]
@@ -207,7 +228,6 @@ def harmonize_ragged_edges(
         values="value",
     )
     return to_write
-
 
 def transform_time_series(
     ds: pd.DataFrame,
@@ -391,10 +411,10 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     values = model_result["values"]
 
     # Print the best model's details
-    # print("============ Model Details ============")
+    print("============ Model Details ============")
     # print(f"Model                     : {model_result['best_model']}")
-    # print(f"Reference Date            : {reference_date}")
-    # print(f"Forecast                  : {pred:.4f}")
+    print(f"Reference Date            : {reference_date}")
+    print(f"Forecast                  : {pred:.4f}")
     # print(f"R-Squared (R²)            : {model_result['r_squared']:.4f}")
     # print(f"Mean Absolute Percentage Error (MAPE): {model_result['mape']:.2f}%")
     # print(f"Root Mean Square Error (RMSE) : {model_result['rmse']:.4f}")
@@ -448,6 +468,7 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     Rhat_df = pd.DataFrame(Rhat, columns=header, index=Time)
     R_df = pd.DataFrame(R, columns=header, index=Time)
 
+
     retr_forecast = Rhat_df.loc[reference_date].item()
     retr_actual = R_df.loc[reference_date].item()
     # retr_lag = R_df.loc[lag_date].item()
@@ -476,13 +497,13 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
                             "impact": shap_values*(shap_diff/shap_values.sum())  # Shap retransformed
                             })
 
-    # print("\n============ Forecast vs Actual ============")
-    # print(f"Reference Date            : {reference_date}")
-    # print(f"Retransformed Forecast    : {retr_forecast:,.2f}")
-    # print(f"Actual Release            : {retr_actual:,.2f}")
-    # print(
-    #     f"Percentage Error (Level)  : {(retr_forecast - retr_actual) / retr_actual:.2%}"
-    # )
+    print("\n============ Forecast vs Actual ============")
+    print(f"Reference Date            : {reference_date}")
+    print(f"Retransformed Forecast    : {retr_forecast:,.2f}")
+    print(f"Actual Release            : {retr_actual:,.2f}")
+    print(
+        f"Percentage Error (Level)  : {(retr_forecast - retr_actual) / retr_actual:.2%}"
+    )
 
     bounds_level = {}
     for key, value in bounds.items():

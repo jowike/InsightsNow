@@ -14,7 +14,7 @@ spec_options:
 
 options:
   y_code: PCEC96
-  ref_date: 2024-06-01
+  ref_date: 2021-07-01
   sample_start: 2000-01-01
   vintage_name: real-time
   series_code_col: VariableCode
