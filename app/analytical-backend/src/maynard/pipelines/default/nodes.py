@@ -553,6 +553,7 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
         sheet1.to_excel(writer, sheet_name="Model Details", index=False)
         # Save contributions
         shap_contributions.to_excel(writer, sheet_name="Contributions")
+        shap_contributions.to_excel(writer, sheet_name="Contributions")
 
         # Save confidence bounds
         pd.DataFrame(bounds_level).to_excel(writer, sheet_name="Confidence Bounds")
