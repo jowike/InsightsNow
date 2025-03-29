@@ -41,8 +41,6 @@ def tableAction():
     style={
         "position": "absolute",
         "inset": "0px 0px auto auto",
-        # "margin": "0px",
-        # "transform": "translate3d(0px, 25.3333px, 0px)"
         }
 
     container = html.Div([

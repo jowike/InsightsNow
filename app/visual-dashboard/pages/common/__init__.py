@@ -1,6 +1,6 @@
 from .sidebar import sideBar
 from .mobile_nav import mobileNavBar, mobileSidebarHeader
-from .top_navbar import topNavBar
+from .top_navbar import topNavBar, infoControl
 from .button_bar import buttonBar
 from .settings_popup import settingsPopupButton, settingsPopupPanel
 from .footer import footer

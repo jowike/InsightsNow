@@ -19,12 +19,23 @@ def infoControl():
             # Info Icon
             html.Span(
                 [
-                    html.I(ICON.INFO, style={"margin-left": "7.5px", "margin-right": "10px", "position": "relative", "top": "-1px"}),  # Align icon to the top
-                    html.Span("Read Me", style={"margin-right": "7.5px"})
+                    html.Span(
+                        "Let the Journey Begin: Step-by-Step Guide 🧶",
+                        style={
+                            "fontWeight": "500",
+                            "fontSize": "14px",
+                            "color": "#343a40",  # Darker text for emphasis
+                        }
+                    )
                 ],
-                className="input-group-text text-gray-800 me-10",
-                id="info-icon",  # ID for triggering modal
+                className="input-group-text bg-light border px-1 shadow-sm px-3",
+                id="info-icon",
+                style={
+                    "height": "42px",
+                    "cursor": "pointer"
+                    }
             ),
+
 
             # Modal for Guidelines
             dbc.Modal(
@@ -203,7 +214,7 @@ def topNavBar():
         html.Div([
             html.Div([
                 html.Div([
-                    infoControl()
+                    # infoControl(),
                 ], className='d-flex align-items-center')
             ], className='d-flex justify-content-between w-100', id='navbarSupportedContent')
         ], className='container-fluid px-0')
