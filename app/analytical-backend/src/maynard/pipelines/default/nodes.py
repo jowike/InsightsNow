@@ -73,6 +73,7 @@ def prepare_vintage_data(
         parameters["series_val_col"],
     ]
 
+    # TODO: preliminary, current-vintage (pseudo-real-time)
     if parameters["vintage_name"] == "real-time":
         df_long = prepare_real_time_vintage_data(
             ds=df[cols].drop_duplicates(),
@@ -83,9 +84,12 @@ def prepare_vintage_data(
             pub_date_col=parameters["pub_date_col"],
             series_val_col=parameters["series_val_col"],
         )
-    # TODO: preliminary, current-vintage (pseudo-real-time)
-    spec = suggest_spec(ds, parameters, spec_options)
-    return df_long, spec
+        spec = suggest_spec(
+            ds.loc[ds["VariableCode"].isin(df_long["VariableCode"].unique())],
+            parameters, spec_options
+            )
+        
+        return df_long, spec
 
 
 def suggest_spec(

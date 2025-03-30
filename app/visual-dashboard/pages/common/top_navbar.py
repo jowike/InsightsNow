@@ -24,15 +24,16 @@ def infoControl():
                         style={
                             "fontWeight": "500",
                             "fontSize": "14px",
-                            "color": "#343a40",  # Darker text for emphasis
+                            "color": "#472C4C"  # "6A5294"  # "#6F5D00", #8E4E1B, #6A5294
                         }
                     )
                 ],
-                className="input-group-text bg-light border px-1 shadow-sm px-3",
+                className="input-group-text bg-light border px-1 shadow-sm px-3",  # 
                 id="info-icon",
                 style={
                     "height": "42px",
-                    "cursor": "pointer"
+                    "cursor": "pointer",
+                    # "backgroundColor": "#E8E9EB"
                     }
             ),
 
