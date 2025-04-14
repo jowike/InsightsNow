@@ -16,3 +16,4 @@ fastparquet
 mifs@ git+https://github.com/jowike/mifs.git@maynard
 pmdarima
 linear-tree
+shap
