@@ -17,6 +17,8 @@ from tools import (
     _convert_to_datetime,
     cast_spec_to_dict,
     suggest_transformation,
+    mape,
+    rmse,
 )
 from tools import test_variance as tvar
 from tools import test_stationarity as tstat
@@ -37,7 +39,6 @@ from estimation import (
 )
 from retransform_prediction import retransform_
 from plots import plot_prediction
-
 
 def prepare_vintage_data(
     ds: pd.DataFrame,
@@ -474,7 +475,11 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
 
 
     retr_forecast = Rhat_df.loc[reference_date].item()
-    retr_actual = R_df.loc[reference_date].item()
+    # retr_actual = R_df.loc[reference_date].item()
+
+    retr_backcast = Rhat_df.loc[:lag_date]
+    retr_actuals = R_df.loc[:lag_date]
+
     # retr_lag = R_df.loc[lag_date].item()
 
     # contributions = calculate_contributions(coef_, retr_forecast, retr_lag, values)
@@ -501,13 +506,13 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
                             "impact": shap_values*(shap_diff/shap_values.sum())  # Shap retransformed
                             })
 
-    print("\n============ Forecast vs Actual ============")
-    print(f"Reference Date            : {reference_date}")
+    # print("\n============ Forecast vs Actual ============")
+    # print(f"Reference Date            : {reference_date}")
     print(f"Retransformed Forecast    : {retr_forecast:,.2f}")
-    print(f"Actual Release            : {retr_actual:,.2f}")
-    print(
-        f"Percentage Error (Level)  : {(retr_forecast - retr_actual) / retr_actual:.2%}"
-    )
+    # print(f"Actual Release            : {retr_actual:,.2f}")
+    # print(
+    #     f"Percentage Error (Level)  : {(retr_forecast - retr_actual) / retr_actual:.2%}"
+    # )
 
     bounds_level = {}
     for key, value in bounds.items():
@@ -517,7 +522,7 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
         tmp = pd.Series(data.reshape(1, -1)[0], index=dt_)
         bounds_level[key] = tmp.loc[dt]
     bounds_level["Predicted"] = Rhat_df.loc[dt][parameters["y_code"]]  # retransformed backcast
-    retransformed_actual = R_df.loc[dt][parameters["y_code"]]  # retransformed actual
+    # retransformed_actual = R_df.loc[dt][parameters["y_code"]]  # retransformed actual
 
     # plot_prediction(
     #     dt=dt,
@@ -543,9 +548,9 @@ def estimate_ml_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
                     "Model Name": model_result["best_model"],
                     "Series Code": parameters["y_code"],
                     "Reference Date": reference_date,
-                    "R-Squared": model_result['r_squared'],
-                    "MAPE": (retr_forecast - retr_actual) / retr_actual,
-                    "RMSE": f"{model_result['rmse']:.4f}",
+                    "R-Squared": r2_score(y_true=retr_actuals, y_pred=retr_backcast),  # model_result['r_squared'],
+                    "MAPE": mape(actual=retr_actuals, predicted=retr_backcast),  # f"{model_result['mape']:.2%}",
+                    "RMSE": rmse(actual=retr_actuals, predicted=retr_backcast),  # f"{model_result['rmse']:.4f}",
                     "Model Estimations Count": model_result["n_est"]
                 },
                 orient="index",
@@ -641,11 +646,14 @@ def estimate_arima_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     Rhat_df = pd.DataFrame(Rhat, columns=header, index=Time)
     R_df = pd.DataFrame(R, columns=header, index=Time)
 
-    retr_forecast = Rhat_df.loc[reference_date].item()
-    retr_actual = R_df.loc[reference_date].item()
-
     reference_date = pd.to_datetime(parameters["ref_date"]).date()
+    lag_date = reference_date - relativedelta(months=1)
 
+    # retr_forecast = Rhat_df.loc[reference_date].item()
+    # retr_actual = R_df.loc[reference_date].item()
+
+    retr_backcast = Rhat_df.loc[:lag_date]
+    retr_actuals = R_df.loc[:lag_date]
     # print("\n============ Forecast vs Actual ============")
     # print(f"Reference Date            : {reference_date}")
     # print(f"Retransformed Forecast    : {retr_forecast:,.2f}")
@@ -685,9 +693,9 @@ def estimate_arima_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
                     "Model Name": model_result["model"],
                     "Series Code": parameters["y_code"],
                     "Reference Date": reference_date,
-                    "R-Squared": model_result['r_squared'],
-                    "MAPE": ((bounds_level["Predicted"] - retransformed_actual) / retransformed_actual).mean(),
-                    "RMSE": f"{model_result['rmse']:.4f}",
+                    "R-Squared": r2_score(y_true=retr_actuals, y_pred=retr_backcast),
+                    "MAPE": mape(actual=retr_actuals, predicted=retr_backcast),
+                    "RMSE": rmse(actual=retr_actuals, predicted=retr_backcast),
                 },
                 orient="index",
                 columns=["Value"],
@@ -726,6 +734,7 @@ def estimate_var_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     )
 
     reference_date = pd.to_datetime(parameters["ref_date"]).date()
+    lag_date = reference_date - relativedelta(months=1)
 
     # print("============ Model Details ============")
     # print(f"Model                     : {model_result['model']}")
@@ -779,8 +788,11 @@ def estimate_var_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
     Rhat_df = pd.DataFrame(Rhat, columns=header, index=Time)
     R_df = pd.DataFrame(R, columns=header, index=Time)
 
-    retr_forecast = Rhat_df.loc[reference_date].item()
-    retr_actual = R_df.loc[reference_date].item()
+    # retr_forecast = Rhat_df.loc[reference_date].item()
+    # retr_actual = R_df.loc[reference_date].item()
+
+    retr_backcast = Rhat_df.loc[:lag_date]
+    retr_actuals = R_df.loc[:lag_date]
 
     # print("\n============ Forecast vs Actual ============")
     # print(f"Reference Date            : {reference_date}")
@@ -821,9 +833,9 @@ def estimate_var_node(ds: pd.DataFrame, ds_base, spec, parameters: dict):
                     "Model Name": model_result["model"],
                     "Series Code": parameters["y_code"],
                     "Reference Date": reference_date,
-                    "R-Squared": model_result['r_squared'],
-                    "MAPE": ((bounds_level["Predicted"] - retransformed_actual) / retransformed_actual).mean(),
-                    "RMSE": f"{model_result['rmse']:.4f}",
+                    "R-Squared": r2_score(y_true=retr_actuals, y_pred=retr_backcast),
+                    "MAPE": mape(actual=retr_actuals, predicted=retr_backcast),
+                    "RMSE": rmse(actual=retr_actuals, predicted=retr_backcast),
                 },
                 orient="index",
                 columns=["Value"],
