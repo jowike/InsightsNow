@@ -5,7 +5,6 @@ from dash.exceptions import PreventUpdate
 from pathlib import Path
 from kedro.framework.session import KedroSession
 from kedro.framework.startup import bootstrap_project
-from kedro.runner import SequentialRunner
 import os
 import subprocess
 import socket
@@ -26,19 +25,15 @@ from config import (
     format_diff,
 )
 from pages.icons.hero import ICON
-from pages.dashboard.page_visits_table import PageVisitsTable
+from pages.dashboard.table_local import LocalExplanationTable
 
-from typing import List
-from dash import html, dcc, Output
-from dash_spa import prefix, trigger_index
-from dash_spa.components.dropdown_aio import DropdownAIO
-from dash_spa.components.button_container_aoi import ButtonContainerAIO
+from dash import html, Output
 from pages.icons.hero import ICON
 
-from dash_spa.components.table import SearchAIO, TableContext
+from dash_spa.components.table import TableContext
 import dash_bootstrap_components as dbc
 
-PageVisitsTable = TableContext.Provider(id="page_visits_table")(PageVisitsTable)
+LocalExplanationTable = TableContext.Provider(id="local_explanation_table")(LocalExplanationTable)
 
 kedro_viz_process = None
 viz_port = None
@@ -46,8 +41,6 @@ viz_port = None
 from config import parameters, data_catalog, load_contributions
 
 _, dropdown_options = load_contributions()
-
-# Function to format changes and icons
 
 
 def register_callbacks(app, project_root):
@@ -62,13 +55,24 @@ def register_callbacks(app, project_root):
                 bootstrap_project(Path(project_root))
                 with KedroSession.create(Path(project_root)) as session:
                     session.run()
-                return html.Div([
-                    html.Span(ICON.DIAMOND, className='me-1'), html.Span("Pipeline executed successfully!", style={"color": "green"})
-                ])
+                return html.Div(
+                    [
+                        html.Span(ICON.DIAMOND, className="me-1"),
+                        html.Span(
+                            "Pipeline executed successfully!", style={"color": "green"}
+                        ),
+                    ]
+                )
             except Exception as e:
-                return html.Div([
-                    html.Span(ICON.DIAMOND, className='me-1'), html.Span(f"Pipeline execution failed: {str(e)}", style={"color": "red"})
-                ])
+                return html.Div(
+                    [
+                        html.Span(ICON.DIAMOND, className="me-1"),
+                        html.Span(
+                            f"Pipeline execution failed: {str(e)}",
+                            style={"color": "red"},
+                        ),
+                    ]
+                )
         return html.Div([html.Span("")])
 
     @app.callback(
@@ -97,8 +101,6 @@ def register_callbacks(app, project_root):
             if kedro_viz_process is None or kedro_viz_process.poll() is not None:
                 try:
                     viz_port = __find_free_port()
-                    # viz_port = 5000
-                    # host_port = 1999
                     host_port = viz_port
 
                     # Start Kedro Viz in a new process group
@@ -139,7 +141,9 @@ def register_callbacks(app, project_root):
                     kedro_viz_process.wait(timeout=5)  # Ensure the process terminates
                     kedro_viz_process = None  # Reset the process variable
                     viz_port = None  # Reset the port variable
-                    return html.Div("✨ Kedro Viz has been stopped.", className="text-muted")
+                    return html.Div(
+                        "✨ Kedro Viz has been stopped.", className="text-muted"
+                    )
                 except subprocess.TimeoutExpired:
                     return html.Div(
                         "✨ Failed to stop Kedro Viz: Timeout occurred.",
@@ -163,7 +167,6 @@ def register_callbacks(app, project_root):
         if info_clicks or close_clicks:
             return not is_open
         return is_open
-
 
     @app.callback(
         Output("advanced-config-modal", "is_open"),
@@ -200,9 +203,6 @@ def register_callbacks(app, project_root):
     def update_output(list_of_contents, list_of_names):
         def __handle_upload(contents, filename):
             try:
-                # file_path = os.path.basename(filename)
-                # target_path = os.path.join(TARGET_FOLDER, filename)
-                # os.rename(file_path, target_path)
                 content_type, content_string = contents.split(",")
                 decoded = base64.b64decode(content_string)
 
@@ -278,7 +278,6 @@ def register_callbacks(app, project_root):
     def save_file(n_clicks, parameters_content, data_catalog_content):
         def __save_yaml(file_path, content):
             with open(file_path, "w") as file:
-                # yaml.safe_dump(yaml.safe_load(content), file)
                 file.write(content)
 
         try:
@@ -342,9 +341,6 @@ def register_callbacks(app, project_root):
         ],
     )
     def toggle_textareas(enable_clicks, save_clicks, discard_clicks):
-        # print(f"Triggered by: {ctx.triggered_id}")
-        # print(f"Enable: {enable_clicks}, Save: {save_clicks}, Discard: {discard_clicks}")
-
         # Check which button triggered the callback
         if ctx.triggered_id == "enable-edit":
             return False, False, no_update, no_update  # Enable both textareas
@@ -367,8 +363,10 @@ def register_callbacks(app, project_root):
         shared_data["nowcast_series"] = nowcast_series
         shared_data["nowcast_header"] = header
         shared_data["cards"] = load_cards()
-        shared_data["local_explanation"], shared_data["dropdown_options"] = contributions, dropdown_options
-        # shared_data["global_explanation"] = load_series(series_id=dropdown_options[0])
+        shared_data["local_explanation"], shared_data["dropdown_options"] = (
+            contributions,
+            dropdown_options,
+        )
 
         if all(shared_data.values()):
             return shared_data
@@ -383,8 +381,6 @@ def register_callbacks(app, project_root):
             Output("nowcast-pred-change", "children"),
             Output("nowcast-annotation", "children"),
             Output("global-explanation-legend-gray", "children"),
-            # Output("nowcast-as-of-date", "children"),
-            # Output("data-as-of-date", "children"),
         ],
         Input("shared-data", "data"),  # Get the data from the store
     )
@@ -410,9 +406,6 @@ def register_callbacks(app, project_root):
             ICON.GLOBE.ME1,
             shared_data["nowcast_header"]["Region"],
         ]
-        # data_watermark = f'Data as of Date: {pd.to_datetime(shared_data["nowcast_header"]["Data as of"]).strftime("%-m/%-d/%Y %-I:%M %p CET")}'
-        # nowcast_watermark = f'Last Run Watermark: {pd.to_datetime(shared_data["nowcast_header"]["Last Run Watermark"]).strftime("%-m/%-d/%Y %-I:%M %p CET")}'
-
         return (
             shared_data["nowcast_series"],
             f'{shared_data["nowcast_header"]["Series Name"]} ({shared_data["nowcast_header"]["Series Code"]})',
@@ -420,11 +413,9 @@ def register_callbacks(app, project_root):
             change_children,
             annot_children,
             shared_data["nowcast_header"]["Series Code"],
-            # data_watermark,
-            # nowcast_watermark
         )  # Return the transformed data
 
-   # Define a callback to update the data in the chart when the store data changes
+    # Define a callback to update the data in the chart when the store data changes
     @app.callback(
         [
             Output("data-as-of-date", "children"),
@@ -439,10 +430,7 @@ def register_callbacks(app, project_root):
         data_watermark = f'⏳ Data as of Date: {pd.to_datetime(shared_data["nowcast_header"]["Data as of"], dayfirst=True).strftime("%-m/%-d/%Y %-I:%M %p CET")}'
         nowcast_watermark = f'Last Run Watermark: {pd.to_datetime(shared_data["nowcast_header"]["Last Run Watermark"], dayfirst=True).strftime("%-m/%-d/%Y %-I:%M %p CET")}'
 
-        return (
-            data_watermark,
-            nowcast_watermark
-        )  # Return the transformed data
+        return (data_watermark, nowcast_watermark)  # Return the transformed data
 
     # Define a callback to update the data in the chart when the store data changes
     @app.callback(
@@ -498,16 +486,10 @@ def register_callbacks(app, project_root):
 
         # Format children for VAR and ARIMA change
         var_annot_children = [
-            # data["VAR"]["Reference Period"],
-            # ICON.GLOBE.ME1,
-            # data["VAR"]["Region"]
             "Prediction Uncertainty: ",
             "{:,.0f}".format(float(data["VAR"]["Prediction Range"])),
         ]
         arima_annot_children = [
-            # data["ARIMA"]["Reference Period"],
-            # ICON.GLOBE.ME1,
-            # data["ARIMA"]["Region"]
             "Prediction Uncertainty: ",
             "{:,.0f}".format(float(data["ARIMA"]["Prediction Range"])),
         ]
@@ -538,23 +520,16 @@ def register_callbacks(app, project_root):
             raise PreventUpdate
 
         local_explanation_data = shared_data["local_explanation"]
-        columns = [{"id": c, "name": c} for c in ['Release Date', 'Data Series', 'Impact']]
+        columns = [
+            {"id": c, "name": c} for c in ["Release Date", "Data Series", "Impact"]
+        ]
 
         # Instantiate the PageVisitsTable with the updated data
-        table = PageVisitsTable(
+        table = LocalExplanationTable(
             data=local_explanation_data,
             columns=columns,
         )
         return table
-
-    # @app.callback(
-    #     Output('global-explanation-chart', 'data'),
-    #     Input('shared-data', 'data'),
-    # )
-    # def update_global_explanation(shared_data):
-    #     if shared_data is None:
-    #         raise PreventUpdate
-    #     return shared_data["global_explanation"]
 
     # Define a callback to update the data in the chart when the store data changes
     @app.callback(
@@ -562,8 +537,9 @@ def register_callbacks(app, project_root):
             Output("average-error-rate", "children"),
             Output("adjusted-r-squared", "children"),
             Output("indicators-count", "children"),
-            Output("models-count", "children")
-            ], Input("shared-data", "data")
+            Output("models-count", "children"),
+        ],
+        Input("shared-data", "data"),
     )
     def update_evaluation(shared_data):
         if not shared_data:
@@ -573,27 +549,35 @@ def register_callbacks(app, project_root):
 
         return (
             "{:.2%}".format(evaluation_measures["Average Error Rate"]),
-            "{:.2%}".format(evaluation_measures["Adjusted R-Squared"]).replace(".0%", "%"),
+            "{:.2%}".format(evaluation_measures["Adjusted R-Squared"]).replace(
+                ".0%", "%"
+            ),
             int(evaluation_measures["Processed Variables Count"]),
-            int(evaluation_measures["Model Estimations Count"])
+            int(evaluation_measures["Model Estimations Count"]),
         )
-    
+
     @app.callback(
         Output("dropdown-menu", "children"),
-        [Input("shared-data", "data"), Input("dropdown-menu", "children"), Input("global-explanation-legend-gray", "children")]
+        [
+            Input("shared-data", "data"),
+            Input("dropdown-menu", "children"),
+            Input("global-explanation-legend-gray", "children"),
+        ],
     )
     def update_dropdown_options(shared_data, current_options, series_code):
         if not shared_data:
             raise PreventUpdate
-        
-        current_options = [d['props']['children'] for d in current_options]
-        if (set(current_options) == set(shared_data["dropdown_options"])) and (shared_data["nowcast_header"]["Series Code"] == series_code):
+
+        current_options = [d["props"]["children"] for d in current_options]
+        if (set(current_options) == set(shared_data["dropdown_options"])) and (
+            shared_data["nowcast_header"]["Series Code"] == series_code
+        ):
             raise PreventUpdate
 
         children = [
             dbc.DropdownMenuItem(option, id=f"option-{option}")
             for option in shared_data["dropdown_options"]
-            ]
+        ]
         return children
 
     @app.callback(
@@ -631,18 +615,28 @@ def register_callbacks(app, project_root):
 
         data = load_series(series_id=selected_option)
 
-        # print(data, "{:,.1f}".format(value).rstrip(".0"), children, selected_option)
-
         return data, "{:,.1f}".format(value).rstrip(".0"), children, selected_option
 
     @app.callback(
-        Output('legend-hidden-row', 'style'),
-        Output('legend-toggle-btn', 'children'),
-        Input('legend-toggle-btn', 'n_clicks'),
-        prevent_initial_call=True
+        Output("legend-hidden-row", "style"),
+        Output("legend-toggle-btn", "children"),
+        Input("legend-toggle-btn", "n_clicks"),
+        prevent_initial_call=True,
     )
     def toggle_legend(n):
         if n and n % 2 == 1:
-            return {'display': 'flex', 'justifyContent': 'center', 'gap': '20px', 'flexWrap': 'wrap', 'marginBottom': '8px'}, "Show less"
+            return {
+                "display": "flex",
+                "justifyContent": "center",
+                "gap": "20px",
+                "flexWrap": "wrap",
+                "marginBottom": "8px",
+            }, "Show less"
         else:
-            return {'display': 'none', 'justifyContent': 'center', 'gap': '20px', 'flexWrap': 'wrap', 'marginBottom': '8px'}, "Show more"
+            return {
+                "display": "none",
+                "justifyContent": "center",
+                "gap": "20px",
+                "flexWrap": "wrap",
+                "marginBottom": "8px",
+            }, "Show more"

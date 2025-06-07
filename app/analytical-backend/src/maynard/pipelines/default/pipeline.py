@@ -28,15 +28,6 @@ def create_pipeline(**kwargs) -> Pipeline:
                 outputs=["vintage_data", "spec"],
                 name="prepare_vintage_data_node",
             ),
-            # node(
-            #     func=suggest_spec,
-            #     inputs=[
-            #         "revision_history",
-            #         "params:options",
-            #         ],
-            #     outputs="ds_spec",
-            #     name="suggest_spec_node",
-            # ),
             node(
                 func=harmonize_ragged_edges,
                 inputs=[

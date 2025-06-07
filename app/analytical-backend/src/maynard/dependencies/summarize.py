@@ -1,13 +1,31 @@
 import numpy as np
 import pandas as pd
+from typing import Dict
 
-def summarize(X, Time, Spec):
+def summarize(
+    X: np.ndarray,
+    Time: np.ndarray,
+    Spec: Dict[str, list]
+) -> None:
     """
-    Summarize and display the detail table for data entering the DFM.
+    Summarize and display the detail table for data entering the nowcasting workflow.
 
-    Description:
-        Display the detail table for the nowcast, decomposing nowcast changes
-        into news and impacts for released data series.
+    Prints summary statistics for each variable: number of observations, units, frequency, mean, 
+    standard deviation, min/max values, and the corresponding dates.
+
+    Args:
+        X: Transformed data array of shape (T, N), where T is the number of time steps
+           and N is the number of variables.
+        Time: Array of datetime-like timestamps of length T.
+        Spec: Dictionary containing model metadata with keys:
+            - 'seriesname': list of series names
+            - 'seriesid': list of unique series identifiers
+            - 'frequency': list of frequencies ('m', 'q', etc.)
+            - 'units': list of unit descriptions
+            - 'transformation': list of applied transformation codes
+
+    Returns:
+        None. The summary is printed to standard output.
     """
     print('\n\n\n')
     print('Table: Data Summary \n')
