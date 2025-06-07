@@ -1,60 +1,98 @@
-# InsightsNow
+# 🌕 InsightsNow – Nowcasting Dashboard
+
+## 💡 Motivation
 
 Long gone are the days of stability, when simple methods provided reliable insights. Today, navigating the economy requires real-time intelligence and advanced analytics.
+
 This Nowcasting Tool transforms economic forecasting.
+
 By integrating real-time data vintages with cutting-edge predictive models, it provides a comprehensive outlook on market conditions, bolstering informed decision making with timely, accurate nowcasts — available in minutes, not weeks.
 
-**🚀 Key assets**
+---
 
-* **Data** – FRED-sourced data from around the world provide a truly global perspective.
-* **Models** — Instant prediction updates driven by economic news, based on cutting-edge econometrics and machine learning.
-* **Explanations** — Aligned with responsible AI principles, the tool eliminates the ‘black box’ effect — not only tells you what’s gonna happen, but also provides insights into the why behind the predictions.
+## 🚀 What’s inside?
 
-#### 🗺️ Dashboard walkthrough 
+* **🌍 Data** – FRED-sourced data from around the world provide a truly global perspective.
+* **📈 Models** – Instant prediction updates driven by economic news, based on machine learning + econometrics. 
+* **🔍 Explanations** – Aligned with responsible AI principles, the tool eliminates the ‘black box’ effect — not only tells you what’s gonna happen, but also provides insights into the why behind the predictions.
 
-**🔮 Nowcast Browser**
+---
 
-The Nowcast Browser displays forecasts for the upcoming reporting period alongside backcasting results, comparing actual and predicted values. It provides a clear visualization of real-time estimates against historical data, supporting data-driven decision-making.
+## 🕹 How to Use
 
-**🔖 Tiles**
+The top navigation lets you move smoothly through the nowcasting process — from uploading your data to exploring results — with just a few clicks.
 
-* **Prediction Uncertainty** – Represents the confidence interval, estimated using empirical backcasting errors. It indicates the range within which actual values are expected to fall.
-* **ARIMA & VAR Models** – These state-of-the-art time series models serve as benchmark (baseline) methods for evaluating forecast accuracy.
-    * VAR (Vector Autoregression) – A multivariate model capturing interdependencies among multiple time series.
-    * ARIMA (AutoRegressive Integrated Moving Average) – A widely used model for univariate time series forecasting, incorporating past values and trends.
+### ⚙️ Settings
 
-**📊 Local Explanation**
+**📥 Upload your files**:
 
-The Local Explanation table details the impact of each variable on the model’s predictions. Contribution values indicate how much each feature influences the final forecast. The table also provides real-time data flow by displaying the release dates for the latest reporting periods of the variables that drive predictions.
+* Add a CSV file with time series data.
+* Optionally upload an Excel file to specify how to set up the model (e.g., which indicators to include, how to transform them).
 
-**🌏 Global Explanation**
+No config file? No problem.
+The tool automatically applies smart defaults based on metadata like units or frequency — including proper transformations (levels, log changes, growth rates) and relevant predictors.
 
-The Global Explanation provides a broader view of how predicted indicators co-move with explanatory variables contributing to the forecast. The chart visualizes period-over-period percentage changes in the target variable alongside its key predictors (explanatory variables).
-Users can navigate through the contributing indicators and select specific variables of interest to analyze their influence on the forecast.
+🗂 Example input files can be found at: [app/analytical-backend/data](https://github.com/jowike/InsightsNow/tree/journal-submission/app/analytical-backend/data).
 
-**⏰ Real-Time Monitoring Insights**
+**Advanced setup**:
 
-This panel provides users with a clear view of data recency, displaying the latest updates for both source data and estimation results. It also allows users to monitor the status of the nowcasting pipeline in real time.
-Additionally, the panel includes information on Kedro-Viz status:
-* If running, the Kedro-Viz address is displayed.
-* If not running or stopped after execution, an appropriate message is shown.
-This ensures transparency in data processing and enables users to track the progress of ongoing estimations.
+* `parameters.yaml` — lets you control key settings like forecast horizon, reference date, and target variable.
+* `catalog.yaml` — manages where your data and results are stored.
 
-**🧮 Model Assessment**
+No coding required — you can edit these files directly in the dashboard.
 
-Gives an overview of key evaluation metrics for predictive analytics, helping assess the accuracy and reliability of nowcasts.
+---
 
-#### 🕹 How to Use? ️ 
-The top navigation pane streamlines the workflow, ensuring smooth data management and seamless execution of nowcasting models.
+### 🪄 Kedro Run
 
-**⚙️ Settings** dropdown menu provides key functionalities for managing data and pipeline configurations:
+Runs the full nowcasting workflow: data prep → modeling → evaluation → forecasting – all in one step.
 
-* **📥 Upload Files**
-    * Import source economic data for nowcasting.
-    * Upload an Excel file defining a custom model specification.
-* **🛠️ Advanced configuration**
-    * Edit Kedro pipeline run configuration and/or data catalog files (e.g., parameters.yaml, catalog.yaml).
+### ✨ Kedro Viz
 
-**️🪄 Kedro Run** standalone button triggers the nowcasting estimation process by executing the Kedro pipeline (kedro run).
+Visual map of the pipeline so you can see how the data flows and the code blueprint behind each step.
 
-**✨ Kedro Viz ** button launches Kedro Viz, which visualizes the pipeline structure, displaying data, nodes, and their connections within the Kedro project.
+---
+
+## 🗺️ Dashboard Walkthrough
+
+### 🔮 Nowcast Browser
+
+The Nowcast Browser displays forecasts for the upcoming reporting period, side-by-side with historical data and backcasts. Helps you immediately assess model accuracy and prediction trends over time.
+
+### 🔖 Tiles Overview
+
+* **Prediction Uncertainty** – Based on empirical backcasting errors; shows the confidence intervals illustrating the likely range within which actual values are expected to fall.
+* **ARIMA & VAR** – State-of-the-art time series models; a point of comparison for evaluating the performance of ML-based predictions.
+
+### 📊 Local Explanation
+
+Shows how each variable affects the current forecast — whether it pushes it up or down. Also reveals when each data point was last updated, highlighting the timeliness of contributing "news". 
+
+### 🌏 Global Explanation
+
+Gives a bigger-picture view of how the forecast co-moves together with its key drivers.
+You can compare percentage changes over time and explore how each contributing indicator shapes the predicted variable over time.
+
+### ⏰ Real-Time Monitoring
+
+Clearly shows how up to date your data and forecasts are — you always know if you're working with the latest information.
+
+### 🧮 Model Assessment
+
+Includes key stats like R², MAPE, and RMSE so you can judge model quality.
+
+---
+
+## 🎥 Demo
+
+Ready to see it in action?
+
+📄 [Jump to the demo section in the top-level README →](https://github.com/jowike/InsightsNow/blob/journal-submission/README.md#-demo) for tour of the dashboard
+
+---
+
+## 📬 Contact
+
+If any issues arise or bugs are encountered, please file a report with a minimal reproducible example at [https://github.com/jowike/InsightsNow/issues](https://github.com/jowike/InsightsNow/issues).
+
+---

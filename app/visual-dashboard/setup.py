@@ -10,6 +10,7 @@ def run_command(command):
         print(f"Command failed: {command}\nError: {e}")
         sys.exit(1)
 
+
 def install_packages():
     commands = [
         "pip install kedro",
@@ -32,12 +33,12 @@ def install_packages():
         "pip install dash_loading_spinners",
         "pip install diskcache",
         "pip install shap",
-        "pip install rpy2"
+        "pip install rpy2",
     ]
     for cmd in commands:
         run_command(cmd)
 
+
 # Environment setup
 if __name__ == "__main__":
     install_packages()
-

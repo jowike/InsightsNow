@@ -2,6 +2,7 @@ from dash import html, dcc
 
 from ..icons.hero import ICON
 
+
 def cardFrame(content):
     return html.Div([
         html.Div([
@@ -12,18 +13,13 @@ def cardFrame(content):
     ], className='col-12 col-sm-6 col-xl-4 mb-4')
 
 
-
-def customers():
+def uncertainty():
     return cardFrame([
         dcc.Store(id='shared-data'),
         html.Div([
             html.Div([
                 ICON.CHART_SIMPLE,
             ], className='icon-shape icon-shape-primary rounded me-4 me-sm-0', style={'background-color': '#ECEEEB', 'color': '#464A4D'}),  # #91989E
-            # html.Div([
-            #     html.H2("Confidence Interval", className='h5'),
-            #     html.H3("345,678", className='fw-extrabold mb-1')
-            # ], className='d-sm-none')
         ], className='col-12 col-xl-5 text-xl-center mb-0 mb-xl-0 d-flex align-items-center justify-content-xl-center'),
         html.Div([
             html.Div([
@@ -43,17 +39,13 @@ def customers():
     ])
 
 
-def revenue():
+def var():
     return cardFrame([
         dcc.Store(id='shared-data'),
         html.Div([
             html.Div([
                 ICON.CHART
             ], className='icon-shape icon-shape-secondary rounded me-4 me-sm-0'),
-            # html.Div([
-            #     html.H2("VAR", className='fw-extrabold h5'),
-            #     html.H3("$15,488", className='mb-1')  # TODO: to be populated based on file
-            # ], className='d-sm-none')
         ], className='col-12 col-xl-5 text-xl-center mb-3 mb-xl-0 d-flex align-items-center justify-content-xl-center'),
         html.Div([
             html.Div([
@@ -61,9 +53,6 @@ def revenue():
                 html.H3("Not Available", className='fw-extrabold mb-2', id='var-pred-value'),
             ], className='d-none d-sm-block'),
             html.Small([
-                # "Feb 1 - Apr 1,"
-                # ICON.GLOBE.ME1,
-                # "USA"
             ], className='d-flex align-items-center text-gray-500', id='var-annotation'),
             html.Div([
                 html.Div([
@@ -76,17 +65,13 @@ def revenue():
     ])
 
 
-def bounceRate():
+def arima():
     return cardFrame([
         dcc.Store(id='shared-data'),
         html.Div([
             html.Div([
                 ICON.CHART
             ], className='icon-shape icon-shape-tertiary rounded me-4 me-sm-0'),
-            # html.Div([
-            #     html.H2("ARIMA", className='fw-extrabold h5'),
-            #     html.H3("$15,757", className='mb-1')
-            # ], className='d-sm-none')
         ], className='col-12 col-xl-5 text-xl-center mb-3 mb-xl-0 d-flex align-items-center justify-content-xl-center'),
         html.Div([
             html.Div([
@@ -94,9 +79,6 @@ def bounceRate():
                 html.H3("Not Available", className='fw-extrabold mb-2', id='arima-pred-value'),
             ], className='d-none d-sm-block'),
             html.Small([
-                # "Aug 1 - Aug 31,",
-                # ICON.GLOBE.ME1,
-                # "USA"
             ], className='d-flex align-items-center text-gray-500', id='arima-annotation'),
             html.Div([
                 html.Div([

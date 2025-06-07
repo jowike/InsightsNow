@@ -1,13 +1,19 @@
-def shift_to_fill_trailing_nans(dataframe):
+import pandas as pd
+
+
+def shift_to_fill_trailing_nans(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
-    Adjust columns in a DataFrame by shifting values to fill trailing NaN values with 
-    a lagged version of the same series, if possible.
-    
-    Parameters:
-    dataframe (pd.DataFrame): A DataFrame containing time series data in columns.
-    
+    Handle the ragged edge problem by shifting time series to fill trailing NaNs.
+
+    For each column with trailing missing values, this function determines how far 
+    the last non-NaN value is from the end of the series and shifts the entire 
+    column forward by that amount.
+
+    Args:
+        dataframe (pd.DataFrame): DataFrame with time series data (columns = variables).
+
     Returns:
-    pd.DataFrame: The modified DataFrame with adjusted columns.
+        pd.DataFrame: A new DataFrame with adjusted columns where possible.
     """
     # Iterate over each column in the DataFrame
     for column in dataframe.columns:
