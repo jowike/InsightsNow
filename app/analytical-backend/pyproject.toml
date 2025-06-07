@@ -10,6 +10,11 @@ dynamic = [ "version",]
 license = {file = "LICENSE"}
 description = "A Kedro-based nowcasting tool for the modern economy."
 authors = [
+    { name = "Elżbieta Jowik", email = "jowik.elzbieta@gmail.com" },
+    { name = "Agnieszka Jastrzębska", email = "agnieszka.jastrzebska.mini@pw.edu.pl" },
+    { name = "Michał Gamrot", email = "gamrot@gmail.com" }
+]
+maintainers = [
     { name = "Elżbieta Jowik", email = "jowik.elzbieta@gmail.com" }
 ]
 dependencies = [ 
@@ -32,6 +37,12 @@ dependencies = [
     "pmdarima",
     "linear-tree",
     "shap",
+    "python_dateutil",
+    "pandas",
+    "rpy2",
+    "scipy",
+    "statsmodels",
+    "typer"
     ]
 
 

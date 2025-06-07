@@ -1,0 +1,69 @@
+.ct-series-a .ct-line {
+    stroke: #8494FF; /* #8494FF #C1C1D2 */
+    stroke-width: 2px;
+}
+
+.ct-series-b .ct-line {
+    stroke: #000000;
+    stroke-width: 2px;
+}
+
+.ct-series-a .ct-point {
+    stroke: #8494FF;
+}
+
+.ct-series-b .ct-point {
+    stroke: #000000;
+}
+
+.circle-black {
+    background-color: #000000;
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.circle-purple {
+    background-color: #8494FF;
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.dropdown-button {
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+textarea {
+    display: block;
+    width: auto; /* Subtract total margin from the width */
+    height: auto;
+    padding: 7px;
+    font-size: 14.5px;
+    font-family: Arial, sans-serif;
+    font-weight: normal;
+    line-height: 1.5;
+    color: #585858; /* #4B5563 */
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: none;
+    box-sizing: border-box;
+    margin-left: 12px;
+    margin-right: 12px; /* Ensures symmetric margins */
+    /* resize: none; */
+}
+
+/* 
+.text-success {
+    color: #10C081 !important;
+}
+.text-danger {
+    color: #FD024F !important;
+} */

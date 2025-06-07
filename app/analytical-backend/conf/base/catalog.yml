@@ -7,22 +7,20 @@
 #
 
 revision_history:
-  type: pandas.CSVDataset
-  filepath: data/0_source/00_extract_vintagedata.csv
-  load_args:
-    decimal: ","
+  type: pandas.ParquetDataset
+  filepath: data/0_source/fred_series_allvintagedates.parquet
 
 vintage_data:
   type: pandas.ParquetDataset
-  filepath: data/01_raw/vintage_data.parquet
+  filepath: data/01_raw/vintage_snapshot.parquet  # actual real-time vintage (data available at the time of forecast)
 
 spec:
   type: pandas.CSVDataset
-  filepath: data/02_intermediate/variable.csv
+  filepath: data/03_primary/nowcast_spec.csv
 
-harmonized_data:
+ragged_edge_aligned:
   type: pandas.ExcelDataset
-  filepath: data/02_intermediate/harmonized_time_series.xlsx
+  filepath: data/02_intermediate/ragged_edge_aligned.xlsx
   load_args:
     engine: openpyxl
     sheet_name: data
@@ -32,42 +30,38 @@ harmonized_data:
     sheet_name: data
     index: True
 
-transformed_aligned_data:
+transformed_aligned:
   type: pandas.ParquetDataset
-  filepath: data/02_intermediate/transformed_data.parquet
+  filepath: data/02_intermediate/transformed_aligned.parquet
     
-aligned_non_transformed_data:
+raw_aligned:
   type: pandas.ParquetDataset
-  filepath: data/02_intermediate/non_transformed_data.parquet
+  filepath: data/02_intermediate/raw_aligned.parquet
 
-reduced_transformed_data:
+filtered_by_variance:
   type: pandas.ParquetDataset
-  filepath: data/02_intermediate/reduced_transformed_data.parquet
+  filepath: data/03_primary/filtered_by_variance.parquet
 
-transformed_data_stat:
+filtered_stationary:
   type: pandas.ParquetDataset
-  filepath: data/02_intermediate/transformed_data_stat.parquet
+  filepath: data/04_feature/filtered_stationary.parquet
 
-transformed_data_var:
+final_selected_features:
   type: pandas.ParquetDataset
-  filepath: data/02_intermediate/transformed_data_var.parquet
-
-selected_series:
-  type: pandas.ParquetDataset
-  filepath: data/04_feature/selected_series.parquet
+  filepath: data/05_model_input/final_selected_features.parquet
 
 ar_estimation_results:
   type: kedro_datasets.text.TextDataset
-  filepath: data/07_model_output/ar_node_completion_logs.txt
+  filepath: data/06_models/ar_node_completion_logs.txt
 
 var_estimation_results:
   type: kedro_datasets.text.TextDataset
-  filepath: data/07_model_output/var_node_completion_logs.txt
+  filepath: data/06_models/var_node_completion_logs.txt
 
 ml_estimation_results:
   type: kedro_datasets.text.TextDataset
-  filepath: data/07_model_output/ml_node_completion_logs.txt
+  filepath: data/06_models/ml_node_completion_logs.txt
 
-dash_data_model:
+results:
   type: kedro_datasets.text.TextDataset
   filepath: data/08_reporting/pipeline_completion_logs.txt
