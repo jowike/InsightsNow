@@ -7,7 +7,7 @@
 This is the engine behind the **InsightsNow** dashboard.
 It takes raw macroeconomic data and turns it into clear, actionable nowcasts.
 
-The pipeline is built with **Kedro** and will soon be available as a Python package on PyPI under the name `maynard`.
+The pipeline is built with **Kedro** and will soon be available as a Python package on PyPI under the name `maynard`. 
 
 ---
 

@@ -1,4 +1,4 @@
-# 📈 InsightsNow – Nowcasting Dashboard
+# 🌕 InsightsNow – Nowcasting Dashboard
 
 ## 💡 Motivation
 
