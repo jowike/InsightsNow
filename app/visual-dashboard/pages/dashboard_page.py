@@ -1,22 +1,22 @@
 from dash import html, dcc 
 from dash_spa import register_page, prefix
 
-from .common import topNavBar, footer, buttonBar, infoControl
+from .common import topNavBar, footer, buttonBar
 from .dashboard import (
-    salesChart,
-    customers,
-    revenue,
-    bounceRate,
-    pageVisitsTable,
-    totalOrdersBarChart,
-    acquisition,
-    newTasksButton,
+    nowcastChart,
+    uncertainty,
+    var,
+    arima,
+    localExplanationTable,
+    globalExplanationBarChart,
+    watermarksDiv,
+    settingsButton,
     runButton,
-    tableAction,
-    alertsNotifications,
-    modal,
-    upload_modal,
-    progressTrack
+    vizButton,
+    assessmentDiv,
+    settingsModal,
+    uploadModal,
+    infoControl
 )
 from .icons.hero import ICON
 
@@ -40,7 +40,7 @@ layout = html.Main(
         # Store for shared data
         dcc.Store(id='shared-data'),  # Store the shared data here
         topNavBar(),
-        buttonBar(infoControl(), [newTasksButton(), runButton(), tableAction()]),
+        buttonBar(infoControl(), [settingsButton(), runButton(), vizButton()]),
         html.P("", id="pipeline-viz", className="pipeline-status small pe-4"),
         dls.Hash(
             html.P("", id="pipeline-status", className="pipeline-status small pe-4"),
@@ -49,17 +49,17 @@ layout = html.Main(
             size=100,
             fullscreen=True
         ),
-        modal(parameters=parameters, data_catalog=data_catalog),
-        upload_modal(),
-        html.Div([salesChart(), customers(), revenue(), bounceRate()], className="row"),
+        settingsModal(parameters=parameters, data_catalog=data_catalog),
+        uploadModal(),
+        html.Div([nowcastChart(), uncertainty(), var(), arima()], className="row"),
         html.Div(
             [
                 html.Div(
                     [
                         html.Div(
                             [
-                                pageVisitsTable(),
-                                alertsNotifications(),
+                                localExplanationTable(),
+                                watermarksDiv(),
                             ],
                             className="row",
                         )
@@ -68,8 +68,8 @@ layout = html.Main(
                 ),
                 html.Div(
                     [
-                        totalOrdersBarChart(),
-                        acquisition(),
+                        globalExplanationBarChart(),
+                        assessmentDiv(),
                         ],
                     className="col-12 col-xl-4",
                 ),

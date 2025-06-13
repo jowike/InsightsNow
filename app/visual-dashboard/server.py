@@ -2,6 +2,7 @@ import os
 from dash import Dash
 from dash_spa import logging
 
+
 def serve_app(app: Dash, path="/", debug=False):
     """Serve Dash application
 
@@ -13,10 +14,10 @@ def serve_app(app: Dash, path="/", debug=False):
 
     # Turn off werkzeug logging as it's very noisy
 
-    _log = logging.getLogger('werkzeug')
+    _log = logging.getLogger("werkzeug")
     _log.setLevel(logging.ERROR)
 
-    _log = logging.getLogger('redux_store')
+    _log = logging.getLogger("redux_store")
     _log.setLevel(logging.WARN)
 
     # _log = logging.getLogger('dash_spa')
@@ -30,6 +31,12 @@ def serve_app(app: Dash, path="/", debug=False):
     hostname = os.environ.get("HOSTNAME", "localhost")
     hostport = os.environ.get("HOSTPORT", "1024")
 
-    print(f' * Visit http://{hostname}:{hostport}{path}')
+    print(f" * Visit http://{hostname}:{hostport}{path}")
 
-    app.run_server(debug=debug, host='0.0.0.0', port=port, threaded=False, dev_tools_serve_dev_bundles=False)
+    app.run_server(
+        debug=debug,
+        host="0.0.0.0",
+        port=port,
+        threaded=False,
+        dev_tools_serve_dev_bundles=False,
+    )
