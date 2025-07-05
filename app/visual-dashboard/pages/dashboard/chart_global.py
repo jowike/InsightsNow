@@ -35,7 +35,13 @@ def globalExplanationBarChart():
                 label=html.I(className="fas fa-cog"),  # Remove default label
                 toggleClassName="btn btn-white dropdown-toggle d-flex align-items-center",
                 toggle_style={"border": "1px solid #ced4da", "borderRadius": "4px"},
-                children=[],
+                children=[
+                    dbc.DropdownMenuItem(
+                        "Loading...",
+                        id={"type": "series-option", "index": "placeholder"},
+                        disabled=True,
+                    )
+                ],
                 id="dropdown-menu",
                 className="dropdown-menu-end dropdown-menu-xs",  # Menu styling
                 menu_variant="light",  # Light menu style
@@ -69,10 +75,18 @@ def globalExplanationBarChart():
             ),
             html.Div(
                 [
-                    html.Div(
+                html.Div(
+                    [
+                        html.Span([
+                            html.I(className="fas fa-info-circle me-1", style={"color": "black"}),
+                            "Uncover the ",
+                            html.Strong("why"),
+                            " →"
+                        ], className="fw-normal small me-2"),
                         dropdown,
-                        className="d-flex justify-content-end align-items-center mb-4",
-                    ),
+                    ],
+                    className="d-flex align-items-center justify-content-end mb-4",
+                ),
                     html.Div(
                         [
                             html.Span(className="dot rounded-circle bg-gray-800 me-2"),

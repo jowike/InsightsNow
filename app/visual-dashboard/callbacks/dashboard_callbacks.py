@@ -1,4 +1,4 @@
-from dash import Input, Output, State, html, callback_context
+from dash import Input, Output, State, html, callback_context, ALL
 from dash_spa.components.table import TableContext
 
 from dash.exceptions import PreventUpdate
@@ -85,27 +85,27 @@ def register_callbacks(app, project_root):
     def manage_pipeline_viz(start_clicks, stop_clicks):
         global kedro_viz_process, viz_port
 
-        def __find_free_port(port=5003, max_port=65535):
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            while port <= max_port:
-                try:
-                    sock.bind(("", port))
-                    sock.close()
-                    return port
-                except OSError:
-                    port += 1
-            raise IOError("no free ports")
+        # def __find_free_port(port=5003, max_port=65535):
+        #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #     while port <= max_port:
+        #         try:
+        #             sock.bind(("", port))
+        #             sock.close()
+        #             return port
+        #         except OSError:
+        #             port += 1
+        #     raise IOError("no free ports")
 
         # Start Kedro Viz
         if start_clicks > 0:
             if kedro_viz_process is None or kedro_viz_process.poll() is not None:
                 try:
-                    viz_port = __find_free_port()
-                    host_port = viz_port
+                    # viz_port = __find_free_port()
+                    viz_port = 5000
 
                     # Start Kedro Viz in a new process group
                     kedro_viz_process = subprocess.Popen(
-                        f"cd {project_root} && kedro viz --host 0.0.0.0 --port={viz_port}",
+                        f"cd {project_root} && kedro viz run --host 0.0.0.0 --port={viz_port}",
                         shell=True,
                         preexec_fn=os.setsid,  # Create a new process group
                     )
@@ -115,8 +115,8 @@ def register_callbacks(app, project_root):
                                 [
                                     "✨ Kedro Viz is running at ",
                                     html.A(
-                                        f"http://127.0.0.1:{host_port}/",
-                                        href=f"http://127.0.0.1:{host_port}/",
+                                        f"https://insightsviz.mini.pw.edu.pl",
+                                        href=f"https://insightsviz.mini.pw.edu.pl",
                                         target="_blank",
                                         style={
                                             "color": "#7FBBFF",
@@ -574,11 +574,13 @@ def register_callbacks(app, project_root):
         ):
             raise PreventUpdate
 
-        children = [
-            dbc.DropdownMenuItem(option, id=f"option-{option}")
+        return [
+            dbc.DropdownMenuItem(
+                option,
+                id={"type": "series-option", "index": option}
+            )
             for option in shared_data["dropdown_options"]
         ]
-        return children
 
     @app.callback(
         [
@@ -587,29 +589,28 @@ def register_callbacks(app, project_root):
             Output("global-explanation-change", "children"),
             Output("global-explanation-selected-option", "children"),
         ],
-        [Input(f"option-{option}", "n_clicks") for option in dropdown_options],
+        Input({"type": "series-option", "index": ALL}, "n_clicks"),
     )
-    def update_selection(*args):
-        ctx = callback_context
-        if not ctx.triggered:
+    def update_selection(n_clicks_list):
+        # ⛔️ zabezpieczenie przed uruchomieniem bez triggera
+        if not ctx.triggered_id or all(n is None for n in n_clicks_list):
             raise PreventUpdate
-        clicked_id = ctx.triggered[0]["prop_id"].split(".")[0]
-        selected_option = clicked_id.split("-")[1]
+
+        selected_option = ctx.triggered_id["index"]  # ✅ pattern-matching ID
 
         data = load_series(series_id=selected_option, diff=False)
-
         value = float(data["series"][1][-1])
         lag = float(data["series"][1][-2])
         pct_diff = (value - lag) / lag
 
         diff_class, diff_icon = format_diff(pct_diff)
 
-        # Format children for VAR and ARIMA change
         children = [
             "Since Last Month",
             diff_icon,
             html.Span(
-                "{:.2%}".format(pct_diff).replace(".0%", "%"), className=diff_class
+                "{:.2%}".format(pct_diff).replace(".0%", "%"),
+                className=diff_class
             ),
         ]
 

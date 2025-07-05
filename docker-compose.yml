@@ -1,0 +1,22 @@
+services:
+  visual-dashboard:
+    image: python:3.12   # Używamy oficjalnego obrazu Pythona
+    ports:
+      - "8005:1024"
+      - "8006:5000"
+    volumes:
+      - maynard-app:/app  # Montowanie katalogu aplikacji i danych
+    working_dir: /app
+    entrypoint: ["/app/entrypoint.sh"]  # Uruchamiamy skrypt startowy
+volumes:
+  maynard-app:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Users/ejowik001/Desktop/Github/InsightsNow/app
+
+    # driver_opts:
+    #   type: "nfs"
+    #   o: "addr=194.29.178.17,nolock,soft,rw"
+    #   device: ":/vms/volumes/InsightsNow/app"
