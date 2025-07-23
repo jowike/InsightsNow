@@ -1,10 +1,10 @@
 [build-system]
-requires = [ "setuptools",]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 requires-python = ">=3.9"
-name = "maynard"
+name = "insightsnow"
 readme = "README.md"
 version = "0.1.0"
 license = {file = "LICENSE.md"}
@@ -12,7 +12,6 @@ description = "A Kedro-based nowcasting tool for the modern economy."
 authors = [
     { name = "Elżbieta Jowik", email = "jowik.elzbieta@gmail.com" },
     { name = "Agnieszka Jastrzębska", email = "agnieszka.jastrzebska.mini@pw.edu.pl" },
-    { name = "Michał Gamrot", email = "gamrot@gmail.com" }
 ]
 maintainers = [
     { name = "Elżbieta Jowik", email = "jowik.elzbieta@gmail.com" }
@@ -33,31 +32,14 @@ dependencies = [
         "pyarrow==18.0.0",
         "fastparquet==2024.5.0",
         "kaleido==0.2.1",
+        "dash-uploader==0.6.1",
+        "dash-spa==1.1.5",
+        "dash_chartist==0.0.5",
+        "dash_loading_spinners==1.0.3",
+        "dash==2.11.1",
         "diskcache==5.6.3",
         "shap==0.47.0",
         "rpy2==3.5.11",
         "scipy==1.11.4"
     ]
 
-[project.scripts]
-maynard = "maynard.__main__:app"
-
-[tool.kedro]
-package_name = "maynard"
-project_name = "maynard"
-kedro_init_version = "0.19.9"
-tools = "['Kedro Viz']"
-example_pipeline = "True"
-source_dir = "src"
-
-[project.entry-points."kedro.hooks"]
-
-[tool.setuptools.dynamic.version]
-attr = "maynard.__version__"
-
-[tool.setuptools.packages.find]
-where = [ "src",]
-namespaces = false
-
-[tool.kedro_telemetry]
-project_id = "020a921ea646468bb64a6ae2d4f72d11"

@@ -105,7 +105,7 @@ def register_callbacks(app, project_root):
 
                     # Start Kedro Viz in a new process group
                     kedro_viz_process = subprocess.Popen(
-                        f"cd {project_root} && kedro viz --host 0.0.0.0 --port={viz_port}",
+                        f"cd {project_root} && kedro viz run --host 0.0.0.0 --port={viz_port}",
                         shell=True,
                         preexec_fn=os.setsid,  # Create a new process group
                     )

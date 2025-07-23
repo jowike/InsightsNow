@@ -92,6 +92,18 @@ To run the full app locally:
    pip install -r requirements.txt
    ```
 
+2. **Make sure R (and strucchange) are ready to go**
+
+   > We rely on the `strucchange` R package (accessed via the `rpy2` Python bridge) for spotting structural breaks in time series data.
+
+   If you don’t have R installed, you can download it from [cran.r-project.org](https://cran.r-project.org/).
+
+   Then, open an R console and run:
+
+   ```r
+   install.packages("strucchange")
+   ```
+
 3. **Set up the dashboard**
    
    From the `visual-dashboard` folder:
@@ -100,16 +112,17 @@ To run the full app locally:
    pip install -r requirements.txt
    python setup.py install
    ```
+   That’s it – once all dependencies are installed...
 
-5. **Run the dashboard**
+4. **Run the dashboard**
    
-   From the same folder:
+   Still in the visual-dashboard folder:
 
    ```bash
    python app.py
    ```
 
-7. Open your browser and start exploring forecasts!
+5. **Open browser and start exploring forecasts!**
 
 ---
 
