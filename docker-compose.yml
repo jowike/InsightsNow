@@ -14,7 +14,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /Users/ejowik001/Desktop/Github/InsightsNow/app
+      device: /Users/elajowik/Documents/InsightsNow/app
 
     # driver_opts:
     #   type: "nfs"
