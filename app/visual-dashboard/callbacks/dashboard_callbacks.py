@@ -1,4 +1,4 @@
-from dash import Input, Output, State, html, callback_context
+from dash import Input, Output, State, html, callback_context, ALL
 from dash_spa.components.table import TableContext
 
 from dash.exceptions import PreventUpdate
@@ -574,11 +574,13 @@ def register_callbacks(app, project_root):
         ):
             raise PreventUpdate
 
-        children = [
-            dbc.DropdownMenuItem(option, id=f"option-{option}")
+        return [
+            dbc.DropdownMenuItem(
+                option,
+                id={"type": "series-option", "index": option}
+            )
             for option in shared_data["dropdown_options"]
         ]
-        return children
 
     @app.callback(
         [
@@ -587,14 +589,14 @@ def register_callbacks(app, project_root):
             Output("global-explanation-change", "children"),
             Output("global-explanation-selected-option", "children"),
         ],
-        [Input(f"option-{option}", "n_clicks") for option in dropdown_options],
+        Input({"type": "series-option", "index": ALL}, "n_clicks"),
     )
-    def update_selection(*args):
-        ctx = callback_context
-        if not ctx.triggered:
+    def update_selection(n_clicks_list):
+        # zabezpieczenie przed uruchomieniem bez triggera
+        if not ctx.triggered_id or all(n is None for n in n_clicks_list):
             raise PreventUpdate
-        clicked_id = ctx.triggered[0]["prop_id"].split(".")[0]
-        selected_option = clicked_id.split("-")[1]
+
+        selected_option = ctx.triggered_id["index"]  # pattern-matching ID
 
         data = load_series(series_id=selected_option, diff=False)
 
@@ -609,7 +611,8 @@ def register_callbacks(app, project_root):
             "Since Last Month",
             diff_icon,
             html.Span(
-                "{:.2%}".format(pct_diff).replace(".0%", "%"), className=diff_class
+                "{:.2%}".format(pct_diff).replace(".0%", "%"),
+                className=diff_class
             ),
         ]
 
